@@ -9,6 +9,7 @@ import (
 
 	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
 	"github.com/masudur-rahman/expense-tracker-bot/models"
+	"github.com/masudur-rahman/expense-tracker-bot/modules/cache"
 	"github.com/masudur-rahman/expense-tracker-bot/modules/google"
 	"github.com/masudur-rahman/expense-tracker-bot/services/all"
 
@@ -19,6 +20,10 @@ import (
 	"github.com/masudur-rahman/styx/sql/sqlite"
 	"github.com/masudur-rahman/styx/sql/sqlite/lib"
 )
+
+func InitiateCache() {
+	cache.Init(TrackerConfig.Cache)
+}
 
 func InitiateDatabaseConnection(ctx context.Context) error {
 	cfg := TrackerConfig.Database

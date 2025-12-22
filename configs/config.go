@@ -12,6 +12,7 @@ var TrackerConfig ExpenseConfiguration
 type ExpenseConfiguration struct {
 	Telegram Telegram       `json:"telegram" yaml:"telegram"`
 	Database DatabaseConfig `json:"database" yaml:"database"`
+	Cache    CacheConfig    `json:"cache" yaml:"cache"`
 }
 
 type Telegram struct {
@@ -62,3 +63,22 @@ type DBConfigSQLite struct {
 func (cp DBConfigPostgres) String() string {
 	return fmt.Sprintf("user=%v password=%v dbname=%v host=%v port=%v sslmode=%v", cp.User, cp.Password, cp.Name, cp.Host, cp.Port, cp.SSLMode)
 }
+
+type CacheConfig struct {
+	Type  CacheType        `json:"type" yaml:"type"`
+	Redis CacheConfigRedis `json:"redis" yaml:"redis"`
+}
+
+type CacheConfigRedis struct {
+	Host     string `json:"host" yaml:"host"`
+	Port     string `json:"port" yaml:"port"`
+	User     string `json:"user" yaml:"user"`
+	Password string `json:"password" yaml:"password"`
+}
+
+type CacheType string
+
+const (
+	CacheMap   CacheType = "map"
+	CacheRedis CacheType = "redis"
+)

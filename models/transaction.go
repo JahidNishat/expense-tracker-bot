@@ -44,6 +44,7 @@ var TxnCategories = []TxnCategory{
 	{ID: "pc", Name: "Personal Care"},
 	{ID: "trv", Name: "Travel"},
 	{ID: "fin", Name: "Financial"},
+	{ID: "fest", Name: "Festival"},
 	{ID: "misc", Name: "Miscellaneous"},
 }
 
@@ -56,6 +57,7 @@ var foodSubs = []TxnSubcategory{
 	{ID: "food-snack", Name: "Snacks", CatID: "food"},
 	{ID: "food-fruit", Name: "Fruits", CatID: "food"},
 	{ID: "food-bev", Name: "Beverages", CatID: "food"},
+	{ID: "food-misc", Name: "Miscellaneous", CatID: "food"},
 }
 
 var houseSubs = []TxnSubcategory{
@@ -64,6 +66,7 @@ var houseSubs = []TxnSubcategory{
 	{ID: "house-furn", Name: "Furniture", CatID: "house"},
 	{ID: "house-elec", Name: "Electronics", CatID: "house"},
 	{ID: "house-real", Name: "Real State", CatID: "house"},
+	{ID: "house-misc", Name: "Miscellaneous", CatID: "house"},
 }
 
 var entSubs = []TxnSubcategory{
@@ -71,6 +74,7 @@ var entSubs = []TxnSubcategory{
 	{ID: "ent-sub", Name: "Subscription", CatID: "ent"},
 	{ID: "ent-rec", Name: "Recreation", CatID: "ent"},
 	{ID: "ent-books", Name: "Books", CatID: "ent"},
+	{ID: "ent-misc", Name: "Miscellaneous", CatID: "ent"},
 }
 
 var pcSubs = []TxnSubcategory{
@@ -80,6 +84,8 @@ var pcSubs = []TxnSubcategory{
 	{ID: "pc-cloth", Name: "Clothing", CatID: "pc"},
 	{ID: "pc-health", Name: "Health", CatID: "pc"},
 	{ID: "pc-med", Name: "Medicine", CatID: "pc"},
+	{ID: "pc-access", Name: "Accessories", CatID: "pc"},
+	{ID: "pc-misc", Name: "Miscellaneous", CatID: "pc"},
 }
 
 var trvSubs = []TxnSubcategory{
@@ -88,6 +94,7 @@ var trvSubs = []TxnSubcategory{
 	{ID: "trv-sight", Name: "Sightseeing", CatID: "trv"},
 	{ID: "trv-trans", Name: "Transportation", CatID: "trv"},
 	{ID: "trv-gift", Name: "Gifts", CatID: "trv"},
+	{ID: "trv-misc", Name: "Miscellaneous", CatID: "trv"},
 }
 
 var finSubs = []TxnSubcategory{
@@ -104,6 +111,13 @@ var finSubs = []TxnSubcategory{
 	{ID: "fin-tax", Name: "Tax", CatID: "fin"},
 	{ID: "fin-charge", Name: "Charges", CatID: "fin"},
 	{ID: "fin-flexi", Name: "Mobile Recharge", CatID: "fin"},
+	{ID: "fin-misc", Name: "Miscellaneous", CatID: "fin"},
+}
+
+var festSubs = []TxnSubcategory{
+	{ID: "fest-eid", Name: "Eid", CatID: "fest"},
+	{ID: "fest-wed", Name: "Wedding", CatID: "fest"},
+	{ID: "fest-others", Name: "Others", CatID: "fest"},
 }
 
 var miscSubs = []TxnSubcategory{
@@ -119,5 +133,6 @@ func init() {
 	TxnSubcategories = append(TxnSubcategories, pcSubs...)
 	TxnSubcategories = append(TxnSubcategories, trvSubs...)
 	TxnSubcategories = append(TxnSubcategories, finSubs...)
+	TxnSubcategories = append(TxnSubcategories, festSubs...)
 	TxnSubcategories = append(TxnSubcategories, miscSubs...)
 }

@@ -46,6 +46,7 @@ to quickly create a Cobra application.`,
 		if err := configs.InitiateDatabaseConnection(cmd.Context()); err != nil {
 			log.Fatalln(err)
 		}
+		configs.InitiateCache()
 
 		bot, err := api.TeleBotRoutes()
 		if err != nil {

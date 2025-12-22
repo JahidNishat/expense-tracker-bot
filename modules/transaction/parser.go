@@ -1,12 +1,15 @@
 package transaction
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/models"
+	"github.com/masudur-rahman/expense-tracker-bot/modules/ai"
+	"github.com/masudur-rahman/expense-tracker-bot/modules/cache"
 	"github.com/masudur-rahman/expense-tracker-bot/pkg"
 )
 
@@ -80,8 +83,37 @@ func ParseTransaction(text string) (models.Transaction, error) {
 		}
 	}
 
+	if err := opts.subcategoryParser(); err != nil {
+		return models.Transaction{}, err
+	}
 	err := opts.parseTransaction()
 	return opts.txn, err
+}
+
+func (p *transactionParser) subcategoryParser() error {
+	for _, subcat := range models.TxnSubcategories {
+		if subcat.ID == p.subcategory {
+			return nil
+		}
+	}
+	if p.note == "" {
+		p.note = p.subcategory
+	}
+
+	p.subcategory = strings.ToLower(p.subcategory)
+	if subcat, exist := cache.GetCache(p.subcategory); exist {
+		p.subcategory = subcat
+		return nil
+	}
+
+	subcat, err := ai.TxnCategoryGenerator(context.Background(), p.subcategory)
+	if err != nil {
+		return err
+	}
+
+	_ = cache.SetCache(p.subcategory, subcat, -1)
+	p.subcategory = subcat
+	return nil
 }
 
 func (p *transactionParser) isVerbKeyword(keyword string) bool {

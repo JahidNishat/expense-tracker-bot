@@ -1,48 +1,72 @@
 package cache
 
 import (
+	"context"
 	"fmt"
-	"reflect"
+	"log"
 	"time"
 
+	"github.com/masudur-rahman/expense-tracker-bot/configs"
 	"github.com/patrickmn/go-cache"
-	"github.com/rs/xid"
+	"github.com/redis/go-redis/v9"
 )
 
-var c *cache.Cache
+var ctx = context.Background()
 
-func init() {
-	c = cache.New(6*time.Hour, 24*time.Hour)
+type Cacher struct {
+	rc *redis.Client
+	mc *cache.Cache
 }
 
-func StoreData(obj any) (key string) {
-	key = xid.New().String()
-	c.Set(key, obj, 0)
-	return key
-}
+var cacher = Cacher{}
 
-func FetchData(key string, obj any) error {
-	data, ok := c.Get(key)
-	if !ok {
-		return fmt.Errorf("no data found")
+func Init(config configs.CacheConfig) {
+	switch config.Type {
+	case configs.CacheMap:
+		cacher.mc = cache.New(-1, -1)
+	case configs.CacheRedis:
+		cacher.rc = redis.NewClient(&redis.Options{
+			Addr:       fmt.Sprintf("%s:%s", config.Redis.Host, config.Redis.Port),
+			ClientName: "expense-tracker",
+			Username:   config.Redis.User,
+			Password:   config.Redis.Password,
+			DB:         0,
+		})
+		_, err := cacher.rc.Ping(ctx).Result()
+		if err != nil {
+			log.Fatalf("Could not connect to Redis: %v", err)
+		}
+		fmt.Println("Connected to Redis!")
 	}
 
-	reflect.ValueOf(obj).Elem().Set(reflect.ValueOf(data))
-	c.Delete(key)
-	return nil
 }
 
-func FetchDataWithCustomFunc(key string, obj any, getFunc func() (any, error)) error {
-	if err := FetchData(key, obj); err == nil {
-		return nil
+// SetCache stores a key-value pair in Redis with a specific expiration time
+func SetCache(key string, value string, expiration time.Duration) (err error) {
+	if cacher.mc != nil {
+		cacher.mc.Set(key, value, expiration)
+	} else if cacher.rc != nil {
+		err = cacher.rc.Set(ctx, key, value, expiration).Err()
 	}
-
-	data, err := getFunc()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to set cache key %s: %w", key, err)
 	}
-
-	c.Set(key, data, 5*time.Minute)
-	reflect.ValueOf(obj).Elem().Set(reflect.ValueOf(data))
 	return nil
+}
+
+// GetCache retrieves a value from Redis
+func GetCache(key string) (string, bool) {
+	if cacher.mc != nil {
+		if val, has := cacher.mc.Get(key); has {
+			return val.(string), has
+		}
+		return "", false
+	} else if cacher.rc != nil {
+		val, err := cacher.rc.Get(ctx, key).Result()
+		if err != nil {
+			return "", false
+		}
+		return val, true
+	}
+	return "", false
 }
