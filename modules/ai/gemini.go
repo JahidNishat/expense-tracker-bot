@@ -26,18 +26,20 @@ func TxnSubcategoryClassifier(ctx context.Context, apiKey, userInput, taxonomyJS
 		return nil, err
 	}
 
-	prompt := fmt.Sprintf(`
-    Analyze the User Input and map it to the most relevant Category and Subcategory from the provided Taxonomy.
+	prompt := fmt.Sprintf(`You are a personal expense classification system for a Bangladeshi user.
+Each subcategory has a "Hint" field with keywords and examples — use it to match the input.
+Pick the subcategory whose Hint best matches the input. Only fall back to misc-misc if nothing else fits.
 
-    Constraints:
-    1. Output must be valid JSON matching the Schema.
-    2. The selected SubcategoryID **must** exist under the selected CategoryID in the Taxonomy.
-    3. If the input is ambiguous, choose the most logical option.
+Constraints:
+1. Output must be valid JSON matching the Schema.
+2. The selected SubcategoryID must exist under the selected CategoryID in the Taxonomy.
+3. Match against Hint keywords first, then Name, then general reasoning.
+4. Use ONLY the exact subcategory IDs from the Taxonomy. Never invent new IDs.
 
-    Taxonomy (Strict Options):
-    %s
+Taxonomy:
+%s
 
-    User Input: "%s"
+User Input: "%s"
 `, taxonomyJSON, userInput)
 
 	resp, err := client.Models.GenerateContent(ctx, classifier, genai.Text(prompt), &genai.GenerateContentConfig{

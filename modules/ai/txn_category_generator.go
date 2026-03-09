@@ -97,6 +97,10 @@ func TxnCategoryGenerator(ctx context.Context, userInput string, ai ...Generator
 	}
 
 	fmt.Printf("Matched: %s > %s (Confidence: %v)\n", result.Category, result.Subcategory, result.Confidence)
+	if _, valid := models.SubCatNameMap[result.Subcategory]; !valid && result.Subcategory != "" {
+		fmt.Printf("AI returned invalid subcategory ID %q, falling back to misc-misc\n", result.Subcategory)
+		result.Subcategory = "misc-misc"
+	}
 	if result.Subcategory == "" {
 		return "", errors.New("transaction category can't be determined")
 	}

@@ -44,6 +44,7 @@ const (
 	NVDIANemotron9bFree  OpenRouterModel = "nvidia/nemotron-nano-9b-v2:free"
 	NVDIANemotron12bFree OpenRouterModel = "nvidia/nemotron-nano-12b-v2-vl:free"
 	DeepSeekV31NexN1Free OpenRouterModel = "nex-agi/deepseek-v3.1-nex-n1:free"
+	StepFun35FlashFree   OpenRouterModel = "stepfun/step-3.5-flash:free"
 )
 
 // NewClient creates an OpenRouter client
@@ -57,17 +58,22 @@ func NewClient(apiKey string) *Client {
 	}
 }
 
-// Helper: Build the classification prompt
+// buildPrompt constructs the classification prompt with hint-aware instructions.
 func (c *Client) buildPrompt(taxonomyJSON, userInput string) []map[string]any {
 	return []map[string]any{
-		{"role": "system", "content": `You are a classification system. Always respond with valid JSON matching this exact schema:
+		{"role": "system", "content": `You are a personal expense classification system for a Bangladeshi user.
+Each subcategory has a "Hint" field with keywords and examples — use it to match the user input.
+Pick the subcategory whose Hint best matches the input. Only fall back to misc-misc if nothing else fits.
+Use ONLY the exact subcategory IDs from the taxonomy. Never invent or modify IDs.
+
+Always respond with valid JSON matching this exact schema:
 {
-	"category_id": "string", # required, must be parent of subcategory
-	"subcategory_id": "string", # required, must match one subcategory id from the Taxonomy
+	"category_id": "string",
+	"subcategory_id": "string",
 	"confidence": number
 }
 Only return the JSON object, no other text.`},
-		{"role": "user", "content": fmt.Sprintf("Taxonomy:\n%s\n\nUser Input: \"%s\"\n\nClassify the input into the taxonomy.", taxonomyJSON, userInput)},
+		{"role": "user", "content": fmt.Sprintf("Taxonomy:\n%s\n\nUser Input: \"%s\"\n\nClassify this into the best matching subcategory using the Hint keywords.", taxonomyJSON, userInput)},
 	}
 }
 
