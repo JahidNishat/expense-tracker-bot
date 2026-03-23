@@ -87,23 +87,31 @@ verify: tidy # @HELP verifies modules are tidy
 	fi
 
 # ── Docker ────────────────────────────────────────────────────────────────────
+# PDF_GENERATOR selects the Dockerfile target: wkhtmltopdf (default) or chromedp
+PDF_GENERATOR ?= wkhtmltopdf
+DOCKER_TAG_SUFFIX := $(if $(filter chromedp,$(PDF_GENERATOR)),-chromedp,)
 
 .PHONY: docker-build
-docker-build: # @HELP builds a single-arch Docker image using multi-stage Dockerfile
+docker-build: # @HELP builds a single-arch Docker image (PDF_GENERATOR=wkhtmltopdf|chromedp)
 	DOCKER_BUILDKIT=1 docker build \
+	  --target $(PDF_GENERATOR) \
 	  --build-arg VERSION=$(VERSION) \
 	  --build-arg BUILD_DATE=$(commit_timestamp) \
 	  --build-arg GIT_COMMIT=$(commit_hash) \
-	  -t $(DOCKER_IMAGE):$(VERSION) \
+	  -t $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX) \
 	  -f Dockerfile .
 
 .PHONY: docker-build-push
-docker-build-push: # @HELP builds and pushes multi-arch image via buildx
-	docker buildx build --platform linux/amd64,linux/arm64 --output "type=image,push=true" --tag $(DOCKER_IMAGE):$(VERSION) .
+docker-build-push: # @HELP builds and pushes multi-arch image (PDF_GENERATOR=wkhtmltopdf|chromedp)
+	docker buildx build --platform linux/amd64,linux/arm64 \
+	  --target $(PDF_GENERATOR) \
+	  --output "type=image,push=true" \
+	  --tag $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX) .
 
 .PHONY: release
-release: # @HELP builds and pushes multi-arch image for release
-	@$(MAKE) docker-build-push --no-print-directory
+release: # @HELP builds and pushes both wkhtmltopdf and chromedp images
+	@$(MAKE) docker-build-push PDF_GENERATOR=wkhtmltopdf --no-print-directory
+	@$(MAKE) docker-build-push PDF_GENERATOR=chromedp --no-print-directory
 
 # ── Misc ──────────────────────────────────────────────────────────────────────
 

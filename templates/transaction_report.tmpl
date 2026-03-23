@@ -15,7 +15,7 @@
 
         .content-table {
             border-collapse: collapse;
-            margin: 15px 0;
+            margin: 25px 0;
             font-size: 0.9em;
             width: 100%;
             table-layout: fixed;
@@ -43,6 +43,10 @@
 
         .content-table td {
             font-size: 0.85em;
+        }
+
+        .transaction-history td {
+            font-size: 0.71em;
         }
 
         .content-table .date,
@@ -77,39 +81,25 @@
 
         .totals-row td {
             font-weight: bold;
-            border-top: 3px solid #009879;
+            border-top: 2px solid rgba(0, 152, 121, 0.45);
             font-size: 0.9em;
         }
 
         .summary-section {
-            margin-top: 30px;
+            margin-top: 40px;
         }
 
         /* Summary table adjustments */
         .summary-table {
             width: 60%;
-            margin: 15px 0;
+            margin: 25px 0;
             page-break-inside: avoid;
-        }
-
-        .net-balance {
-            font-size: 1.1em;
-            font-weight: bold;
-            margin: 10px 0 20px;
-            color: #333;
         }
 
         h2 {
             font-size: 1.4em;
-            margin: 15px 0 10px;
+            margin: 3px 0 10px;
             color: #333;
-        }
-
-        .report-duration {
-            text-align: center;
-            font-size: 1.1em;
-            color: #555;
-            margin: 0 0 5px;
         }
 
         /* Column widths */
@@ -126,9 +116,6 @@
 </head>
 
 <body>
-    <div class="report-duration">
-        Duration: [{{ .StartDate.Format "Jan 02, 2006" }} - {{ .EndDate.Format "Jan 02, 2006" }}]
-    </div>
     <h2>Transaction History</h2>
     <table class="content-table transaction-history">
         <colgroup>
@@ -206,6 +193,10 @@
                     <td style="text-align: right" class="amount">৳{{ .Amount | formatBDT }}</td>
                 </tr>
                 {{ end }}
+                <tr class="totals-row">
+                    <td>Net Balance (Income − Expense)</td>
+                    <td style="text-align: right" class="amount">৳{{ .NetBalance | formatBDT }}</td>
+                </tr>
                 {{ else }}
                 <tr>
                     <td colspan="2" style="text-align: center; font-style: italic;">No data to display</td>
@@ -213,9 +204,6 @@
                 {{ end }}
                 </tbody>
             </table>
-            {{ if .TypeSummary }}
-            <div class="net-balance">Net Balance (Income − Expense): ৳{{ .NetBalance | formatBDT }}</div>
-            {{ end }}
         </div>
 
         <table class="content-table summary-table">

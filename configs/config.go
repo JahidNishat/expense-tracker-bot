@@ -31,8 +31,15 @@ type DatabaseConfig struct {
 	SQLite   DBConfigSQLite     `json:"sqlite" yaml:"sqlite"`
 }
 
+type PDFGenerator string
+
+const (
+	PDFGeneratorWkhtmltopdf PDFGenerator = "wkhtmltopdf"
+	PDFGeneratorChromeDP    PDFGenerator = "chromedp"
+)
+
 type SystemConfig struct {
-	PDFConverter string `json:"pdfConverter" yaml:"pdfConverter"`
+	PDFGenerator PDFGenerator `json:"pdfGenerator" yaml:"pdfGenerator"`
 }
 
 type DatabaseType string

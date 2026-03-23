@@ -253,20 +253,18 @@ func calculateStartTime(duration SummaryDuration) time.Time {
 }
 
 func generateTransactionReportFromTemplate(report gqtypes.Report) (string, error) {
-	converter := configs.TrackerConfig.System.PDFConverter
+	converter := string(configs.TrackerConfig.System.PDFGenerator)
 
 	funcMap := template.FuncMap{
 		"formatBDT": FormatBDT,
 		"toLower":   strings.ToLower,
 	}
 
-	// Process body template
 	bodyBytes, err := executeTemplate("transaction_report.tmpl", funcMap, &report)
 	if err != nil {
 		return "", err
 	}
 
-	// Select converter-specific header/footer templates
 	headerTmplName, footerTmplName := selectTemplateNames(converter)
 
 	headerBytes, err := executeTemplate(headerTmplName, funcMap, &report)
@@ -295,7 +293,7 @@ func generateTransactionReportFromTemplate(report gqtypes.Report) (string, error
 
 // selectTemplateNames returns header and footer template names for the converter.
 func selectTemplateNames(converter string) (header, footer string) {
-	if converter == "chromedp" {
+	if converter == string(configs.PDFGeneratorChromeDP) {
 		return "header_cdp.tmpl", "footer_cdp.tmpl"
 	}
 	return "header.tmpl", "footer.tmpl"

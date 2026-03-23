@@ -10,9 +10,9 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-// ConvertHTMLToPDF converts HTML content to PDF using the specified converter.
-func ConvertHTMLToPDF(converter string, outputFile string, data []byte, header, footer []byte) error {
-	switch converter {
+// ConvertHTMLToPDF converts HTML content to PDF using the specified generator.
+func ConvertHTMLToPDF(generator string, outputFile string, data, header, footer []byte) error {
+	switch generator {
 	case "chromedp":
 		return convertViaChromeDP(outputFile, data, header, footer)
 	default:
@@ -20,7 +20,7 @@ func ConvertHTMLToPDF(converter string, outputFile string, data []byte, header, 
 	}
 }
 
-func convertViaWkhtmlToPDF(outputFile string, data []byte, header, footer []byte) error {
+func convertViaWkhtmlToPDF(outputFile string, data, header, footer []byte) error {
 	inputFile, cleanInput, err := writeTempFile("wk-body-*.html", data)
 	if err != nil {
 		return err
@@ -55,8 +55,7 @@ func convertViaWkhtmlToPDF(outputFile string, data []byte, header, footer []byte
 		outputFile).Run()
 }
 
-func convertViaChromeDP(outputFile string, htmlContent []byte, header, footer []byte) error {
-	// Write HTML to temp file to avoid data: URL length limits
+func convertViaChromeDP(outputFile string, htmlContent, header, footer []byte) error {
 	tmpFile, cleanTmp, err := writeTempFile("cdp-body-*.html", htmlContent)
 	if err != nil {
 		return err
@@ -91,11 +90,11 @@ func convertViaChromeDP(outputFile string, htmlContent []byte, header, footer []
 				WithPrintBackground(true).
 				WithPaperWidth(8.27).
 				WithPaperHeight(11.69).
-				WithMarginTop(0.9).
+				WithMarginTop(1.15).
 				WithMarginBottom(0.5).
-				WithMarginLeft(0.2).
-				WithMarginRight(0.2).
-				WithScale(0.90).
+				WithMarginLeft(0.4).
+				WithMarginRight(0.4).
+				WithScale(0.78).
 				Do(ctx)
 			return err
 		}),

@@ -30,14 +30,11 @@ RUN --mount=type=cache,target=/go/pkg/mod \
       -o /expense-tracker .
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Stage 2 · Runtime
-# debian:bookworm-slim with wkhtmltopdf for PDF report generation.
-# wkhtmltopdf requires system Qt/X11 libs that distroless cannot provide.
+# Stage 2 · Runtime base
+# Shared base with fonts and common dependencies.
 # ══════════════════════════════════════════════════════════════════════════════
-FROM debian:bookworm-slim AS runtime
+FROM debian:bookworm-slim AS runtime-base
 
-ARG TARGETARCH=amd64
-ARG WKHTMLTOPDF_VERSION=0.12.6.1-3
 ARG DEBIAN_RELEASE_NAME=bookworm
 
 RUN set -x \
@@ -52,19 +49,10 @@ RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE_NAME} contrib" >> /e
       fonts-lohit-beng-bengali \
       fonts-dejavu \
       fontconfig \
-      ttf-mscorefonts-installer
-
-RUN set -x \
- && wget -q https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${TARGETARCH}.deb \
- && dpkg -i wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${TARGETARCH}.deb || true \
- && apt-get install -f -y \
- && ldconfig \
- && rm wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${TARGETARCH}.deb \
+      ttf-mscorefonts-installer \
  && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /tmp/*
 
 COPY --from=builder /expense-tracker /expense-tracker
-
-USER 65535:65535
 
 EXPOSE 8080
 
@@ -73,3 +61,38 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 
 ENTRYPOINT ["/expense-tracker"]
 CMD ["serve"]
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Stage 3a · wkhtmltopdf edition
+# docker build --target wkhtmltopdf .
+# ══════════════════════════════════════════════════════════════════════════════
+FROM runtime-base AS wkhtmltopdf
+
+ARG TARGETARCH=amd64
+ARG WKHTMLTOPDF_VERSION=0.12.6.1-3
+ARG DEBIAN_RELEASE_NAME=bookworm
+
+RUN set -x \
+ && apt-get update \
+ && wget -q https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${TARGETARCH}.deb \
+ && dpkg -i wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${TARGETARCH}.deb || true \
+ && apt-get install -f -y \
+ && ldconfig \
+ && rm wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${TARGETARCH}.deb \
+ && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /tmp/*
+
+USER 65535:65535
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Stage 3b · chromedp edition
+# docker build --target chromedp .
+# ══════════════════════════════════════════════════════════════════════════════
+FROM runtime-base AS chromedp
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends chromium \
+ && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /tmp/*
+
+ENV CHROME_PATH=/usr/bin/chromium
+
+USER 65535:65535

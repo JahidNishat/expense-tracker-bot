@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"testing"
@@ -19,20 +20,22 @@ func TestGenerateTransactionInvoice_Wkhtmltopdf(t *testing.T) {
 	}
 	report, err := generateSampleReport()
 	assert.NoError(t, err)
-	configs.TrackerConfig.System.PDFConverter = "wkhtmltopdf"
+	configs.TrackerConfig.System.PDFGenerator = configs.PDFGeneratorWkhtmltopdf
 	pdfPath, err := generateTransactionReportFromTemplate(report)
 	assert.NoError(t, err)
-	defer os.Remove(pdfPath)
+	//defer os.Remove(pdfPath)
+	fmt.Println(pdfPath)
 	assert.FileExists(t, pdfPath)
 }
 
-func TestGenerateTransactionInvoice_Chromedp(t *testing.T) {
+func TestGenerateTransactionInvoice_ChromeDP(t *testing.T) {
 	report, err := generateSampleReport()
 	assert.NoError(t, err)
-	configs.TrackerConfig.System.PDFConverter = "chromedp"
+	configs.TrackerConfig.System.PDFGenerator = configs.PDFGeneratorChromeDP
 	pdfPath, err := generateTransactionReportFromTemplate(report)
 	assert.NoError(t, err)
-	defer os.Remove(pdfPath)
+	//defer os.Remove(pdfPath)
+	fmt.Println(pdfPath)
 	assert.FileExists(t, pdfPath)
 }
 
