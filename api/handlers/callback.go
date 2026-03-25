@@ -29,6 +29,7 @@ const (
 	ReportTypeCallback          CallbackType = "Report"
 	AccountTypeCallback         CallbackType = "💳 Wallet"
 	UserTypeCallback            CallbackType = "👤 Contact"
+	BudgetTypeCallback          CallbackType = "Budget"
 
 	StepTxnType     NextStep = "txn-type"
 	StepAmount      NextStep = "txn-amount"
@@ -49,6 +50,7 @@ type CallbackOptions struct {
 	Wallet            AccountCallbackOptions     `json:"wallet,omitempty"`
 	User              UserCallbackOptions        `json:"user,omitempty"`
 	Category          TxnCategoryCallbackOptions `json:"category,omitempty"`
+	Budget            BudgetCallbackOptions      `json:"budget,omitempty"`
 	LastSelectedValue string
 }
 
@@ -115,6 +117,8 @@ func Callback(ctx telebot.Context) error {
 		return handleAccountCallback(ctx, callbackOpts)
 	case UserTypeCallback:
 		return handleUserCallback(ctx, callbackOpts)
+	case BudgetTypeCallback:
+		return handleBudgetCallback(ctx, callbackOpts)
 	default:
 		return ctx.Send("Invalid Callback type")
 	}
@@ -195,6 +199,8 @@ func TransactionTextCallback(ctx telebot.Context) error {
 		return handleAccountTypeTextCallback(ctx, callbackOpts)
 	case UserTypeCallback:
 		return handleUserTypeTextCallback(ctx, callbackOpts)
+	case BudgetTypeCallback:
+		return handleBudgetTypeTextCallback(ctx, callbackOpts)
 	default:
 		return ctx.Reply("invalid callback type")
 	}

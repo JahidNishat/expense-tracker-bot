@@ -42,6 +42,7 @@ func TeleBotRoutes() (*telebot.Bot, error) {
 	bot.Handle("/report", handlers.TransactionReportCallback)
 
 	bot.Handle("/cat", handlers.TransactionCategoryCallback)
+	bot.Handle("/budget", handlers.BudgetCommand)
 
 	bot.Handle("/help", handlers.Help)
 
