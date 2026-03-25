@@ -30,7 +30,8 @@ var _ repos.BudgetRepository = &SQLBudgetRepository{}
 func (r *SQLBudgetRepository) GetBudget(userID int64, categoryID string) (*models.Budget, error) {
 	r.logger.Infow("get budget", "userID", userID, "categoryID", categoryID)
 	var b models.Budget
-	found, err := r.db.FindOne(&b, models.Budget{UserID: userID, CategoryID: categoryID})
+	// Use explicit Where for category_id because styx skips zero-value "" in struct filters
+	found, err := r.db.Where("category_id = ?", categoryID).FindOne(&b, models.Budget{UserID: userID})
 	if err != nil {
 		return nil, err
 	}
@@ -66,12 +67,13 @@ func (r *SQLBudgetRepository) UpsertBudget(budget *models.Budget) error {
 
 	budget.CreatedAt = now
 	budget.UpdatedAt = now
-	_, err = r.db.MustCols("alert_at").InsertOne(budget)
+	_, err = r.db.MustCols("alert_at", "category_id").InsertOne(budget)
 	return err
 }
 
 // DeleteBudget removes a budget for the given user+category.
 func (r *SQLBudgetRepository) DeleteBudget(userID int64, categoryID string) error {
 	r.logger.Infow("delete budget", "userID", userID, "categoryID", categoryID)
-	return r.db.DeleteOne(models.Budget{UserID: userID, CategoryID: categoryID})
+	// Use explicit Where for category_id because styx skips zero-value "" in struct filters
+	return r.db.Where("category_id = ?", categoryID).DeleteOne(models.Budget{UserID: userID})
 }
