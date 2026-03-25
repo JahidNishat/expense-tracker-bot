@@ -12,7 +12,7 @@ import (
 func formatBudgetStatuses(statuses []models.BudgetStatus) string {
 	var sb strings.Builder
 	sb.WriteString("*Monthly Budgets*\n")
-	sb.WriteString("──────────────\n")
+	sb.WriteString(models.Separator + "\n")
 
 	for _, s := range statuses {
 		icon := budgetCategoryIcon(s.CategoryID)
@@ -30,7 +30,7 @@ func formatBudgetStatuses(statuses []models.BudgetStatus) string {
 		))
 	}
 
-	sb.WriteString("──────────────\n")
+	sb.WriteString(models.Separator + "\n")
 	sb.WriteString("_Use /budget set to add or update budgets_")
 	return sb.String()
 }

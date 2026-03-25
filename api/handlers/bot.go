@@ -3,12 +3,10 @@ package handlers
 import (
 	"fmt"
 	"html"
-	"log"
 	"strings"
 	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/configs"
-	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/modules/google"
 	"github.com/masudur-rahman/expense-tracker-bot/pkg"
@@ -25,13 +23,12 @@ func StartTrackingExpenses(ctx telebot.Context) error {
 	user, err := us.GetUserByTelegramID(ctx.Sender().ID)
 	if err == nil {
 		if err = ensureDefaultWallet(user.ID); err != nil {
-			logr.DefaultLogger.Errorw("Ensure default wallet error", "error", err.Error())
+			return ctx.Send(models.ErrCommonResponse(err))
 		}
 		return sendStartText(ctx)
 	}
 	if !models.IsErrNotFound(err) {
-		logr.DefaultLogger.Errorw("Start error", "error", err.Error())
-		return ctx.Send(err.Error())
+		return ctx.Send(models.ErrCommonResponse(err))
 	}
 	user = &models.Profile{
 		TelegramID: ctx.Sender().ID,
@@ -40,13 +37,11 @@ func StartTrackingExpenses(ctx telebot.Context) error {
 		LastName:   ctx.Sender().LastName,
 	}
 	if err = us.SignUp(user); err != nil {
-		logr.DefaultLogger.Errorw("Sign up error", "error", err.Error())
-		return ctx.Send(err.Error())
+		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
 	if err = ensureDefaultWallet(user.ID); err != nil {
-		logr.DefaultLogger.Errorw("Create default cash wallet error", "error", err.Error())
-		return ctx.Send(err.Error())
+		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
 	ctx.Set("new-user", true)
@@ -126,12 +121,6 @@ Examples:
 	return ctx.Send(msg, telebot.ModeHTML)
 }
 
-func Welcome(ctx telebot.Context) error {
-	return ctx.Send(fmt.Sprintf(`Hello %v %v!
-Welcome to Expense Tracker !
-`, ctx.Sender().FirstName, ctx.Sender().LastName))
-}
-
 func Help(ctx telebot.Context) error {
 	return ctx.Send(fmt.Sprintf(`Click the following link to open the Usage documentation.
 %s
@@ -165,7 +154,7 @@ func ListContacts(ctx telebot.Context) error {
 
 	contacts, err := all.GetServices().Contact.ListContacts(user.ID)
 	if err != nil {
-		return ctx.Send(err.Error())
+		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
 	return ctx.Send(printContacts(contacts), telebot.ModeMarkdown)
@@ -177,7 +166,7 @@ func printContacts(contacts []models.Contacts) string {
 	}
 	var sb strings.Builder
 	sb.WriteString("👥 *Your Contacts*\n")
-	sb.WriteString("──────────────\n")
+	sb.WriteString(models.Separator + "\n")
 	for _, c := range contacts {
 		name := c.FullName
 		if name == "" {
@@ -199,14 +188,11 @@ func NewUser(ctx telebot.Context) error {
 	// /newuser <id> <name> <email>
 	ui := pkg.SplitString(ctx.Text(), ' ')
 	if len(ui) < 3 {
-		return ctx.Send(`
-Syntax unknown.
-Format /newuser <id> <name> <email>
-`)
+		return ctx.Send("⚠️ Usage: /newuser <id> <name> <email>")
 	}
 	user, err := all.GetServices().User.GetUserByTelegramID(ctx.Sender().ID)
 	if err != nil {
-		return ctx.Send(err.Error())
+		return ctx.Send(models.ErrCommonResponse(err))
 	}
 	if err := all.GetServices().Contact.CreateContact(&models.Contacts{
 		UserID:   user.ID,
@@ -219,21 +205,17 @@ Format /newuser <id> <name> <email>
 			return ""
 		}(),
 	}); err != nil {
-		log.Println(err)
-		return ctx.Send(err.Error())
+		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	return ctx.Send("✅ Contact added!", telebot.ModeMarkdown)
+	return ctx.Send(fmt.Sprintf("✅ Contact *%s* added!", ui[2]), telebot.ModeMarkdown)
 }
 
 func AddAccount(ctx telebot.Context) error {
 	// <type (Cash or Bank)> <unique-short-name> <Wallet Name>
 	aci := pkg.SplitString(ctx.Text(), ' ')
 	if len(aci) != 4 {
-		return ctx.Send(`
-Syntax unknown.
-Format /new <type> <unique-name> <Wallet Name>
-`)
+		return ctx.Send("⚠️ Usage: /new <type> <short-name> <wallet name>")
 	}
 	acc := &models.Wallet{
 		Type:      models.WalletType(aci[1]),
@@ -241,11 +223,10 @@ Format /new <type> <unique-name> <Wallet Name>
 		Name:      aci[3],
 	}
 	if err := all.GetServices().Wallet.CreateWallet(acc); err != nil {
-		log.Println(err)
-		return ctx.Send(err.Error())
+		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	return ctx.Send("✅ Wallet added!", telebot.ModeMarkdown)
+	return ctx.Send(fmt.Sprintf("✅ Wallet *%s* added!", aci[3]), telebot.ModeMarkdown)
 }
 
 func ListWallets(ctx telebot.Context) error {
@@ -268,7 +249,7 @@ func printWallets(wallets []models.Wallet) string {
 	}
 	var sb strings.Builder
 	sb.WriteString("💳 *Your Wallets*\n")
-	sb.WriteString("──────────────\n")
+	sb.WriteString(models.Separator + "\n")
 	var total float64
 	for _, w := range wallets {
 		icon := "💵"
@@ -279,7 +260,7 @@ func printWallets(wallets []models.Wallet) string {
 		sb.WriteString(fmt.Sprintf("   Balance: `%.2f`\n\n", w.Balance))
 		total += w.Balance
 	}
-	sb.WriteString("──────────────\n")
+	sb.WriteString(models.Separator + "\n")
 	sb.WriteString(fmt.Sprintf("💰 *Total: `%.2f`*", total))
 	return sb.String()
 }
@@ -425,7 +406,7 @@ func printTransactionList(txns []models.Transaction) string {
 	for i, txn := range txns {
 		sb.WriteString(txn.Summary())
 		if i < len(txns)-1 {
-			sb.WriteString("──────────────\n\n")
+			sb.WriteString(models.Separator + "\n\n")
 		}
 	}
 	return sb.String()
@@ -434,12 +415,12 @@ func printTransactionList(txns []models.Transaction) string {
 func SyncSQLiteDatabase(ctx telebot.Context) error {
 	db := configs.TrackerConfig.Database
 	if !(db.Type == configs.DatabaseSQLite && db.SQLite.SyncToDrive) {
-		return ctx.Send("Database needs to be SQLite and sync needs to be enabled")
+		return ctx.Send("⚠️ SQLite with Drive sync must be enabled for this.")
 	}
 
 	if err := google.SyncDatabaseToDrive(); err != nil {
-		return ctx.Send(fmt.Sprintf("Database sync failed, reason: %v", err))
+		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	return ctx.Send("Database synced to google drive successfully")
+	return ctx.Send("✅ Database synced to Google Drive")
 }

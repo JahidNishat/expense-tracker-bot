@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/services/all"
@@ -36,7 +35,7 @@ func handleAccountCallback(ctx telebot.Context, callbackOptions CallbackOptions)
 	case StepAccountInfo:
 		return sendAccountInfoQuery(ctx, callbackOptions)
 	default:
-		return ctx.Send("Invalid Step")
+		return ctx.Send("⚠️ Invalid step.")
 	}
 }
 
@@ -89,8 +88,7 @@ func processAccountCreation(ctx telebot.Context, aop AccountCallbackOptions) err
 		Name:      aop.Name,
 	}
 	if err := all.GetServices().Wallet.CreateWallet(acc); err != nil {
-		log.Println(err)
-		return ctx.Send(err.Error())
+		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
 	return ctx.Send(fmt.Sprintf("✅ Wallet *%v* added!", acc.Name), telebot.ModeMarkdown)

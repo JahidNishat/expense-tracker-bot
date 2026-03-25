@@ -131,7 +131,7 @@ func handleSummaryCallback(ctx telebot.Context, callbackOpts CallbackOptions) er
 		}
 		return ctx.Send(photo)
 	default:
-		return ctx.Send("Invalid Step")
+		return ctx.Send("⚠️ Invalid step.")
 	}
 }
 

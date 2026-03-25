@@ -25,6 +25,9 @@ const (
 	LendRecoverySubID  = "fin-recover"
 	BorrowSubID        = "fin-borrow"
 	BorrowReturnSubID  = "fin-return"
+
+	// Separator is the standard visual divider for Telegram messages.
+	Separator = "──────────────"
 )
 
 type Transaction struct {
@@ -64,7 +67,7 @@ func (t Transaction) Summary() string {
 	}
 
 	sb.WriteString(fmt.Sprintf("%s *%s*\n", emoji, action))
-	sb.WriteString("──────────────\n")
+	sb.WriteString(Separator + "\n")
 
 	sb.WriteString(fmt.Sprintf("💵 *Amount:* %.2f\n", t.Amount))
 

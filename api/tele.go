@@ -23,7 +23,7 @@ func TeleBotRoutes() (*telebot.Bot, error) {
 	bot.Use(masudurRahman())
 
 	bot.Handle("/start", handlers.StartTrackingExpenses)
-	bot.Handle("/", handlers.Welcome)
+	bot.Handle("/", handlers.StartTrackingExpenses)
 
 	bot.Handle(telebot.OnCallback, handlers.Callback)
 	bot.Handle(telebot.OnText, handlers.TransactionTextCallback)

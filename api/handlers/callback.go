@@ -97,7 +97,7 @@ func NewTransaction(ctx telebot.Context) error {
 func Callback(ctx telebot.Context) error {
 	callbackOpts, err := parseCallbackOptions(ctx)
 	if err != nil {
-		return ctx.Send("Invalid data or data expired!")
+		return ctx.Send("⚠️ Invalid data or data expired.")
 	}
 
 	oneliners.PrettyJson(callbackOpts, "Callback Options")
@@ -120,7 +120,7 @@ func Callback(ctx telebot.Context) error {
 	case BudgetTypeCallback:
 		return handleBudgetCallback(ctx, callbackOpts)
 	default:
-		return ctx.Send("Invalid Callback type")
+		return ctx.Send("⚠️ Unknown action.")
 	}
 }
 
@@ -164,17 +164,17 @@ func handleTransactionCallback(ctx telebot.Context, callbackOpts CallbackOptions
 	case StepRemarks:
 		err := processTransaction(ctx, callbackOpts.Transaction)
 		if err != nil {
-			return ctx.Send(err.Error())
+			return ctx.Send(models.ErrCommonResponse(err))
 		}
 		user, err := all.GetServices().User.GetUserByTelegramID(ctx.Sender().ID)
 		if err != nil {
-			return ctx.Send("Transaction added successfully!")
+			return ctx.Send("✅ Transaction added!")
 		}
-		msg := "Transaction added successfully!"
+		msg := "✅ Transaction added!"
 		msg += FormatBudgetAlerts(user.ID, callbackOpts.Transaction.Type, callbackOpts.Transaction.SubcategoryID)
 		return ctx.Send(msg, telebot.ModeMarkdown)
 	default:
-		return ctx.Send("Invalid Step")
+		return ctx.Send("⚠️ Invalid step.")
 	}
 }
 
@@ -188,7 +188,7 @@ func TransactionTextCallback(ctx telebot.Context) error {
 	if ctx.Update().Message.ReplyTo == nil {
 		txnSummary, err := handleTransactionFromRegularText(ctx)
 		if err != nil {
-			return ctx.Send(err.Error())
+			return ctx.Send(models.ErrCommonResponse(err))
 		}
 		return ctx.Send(txnSummary, telebot.ModeMarkdown)
 	}
@@ -208,7 +208,7 @@ func TransactionTextCallback(ctx telebot.Context) error {
 	case BudgetTypeCallback:
 		return handleBudgetTypeTextCallback(ctx, callbackOpts)
 	default:
-		return ctx.Reply("invalid callback type")
+		return ctx.Reply("⚠️ Unknown action.")
 	}
 }
 
@@ -218,7 +218,7 @@ func handleTransactionTypeTextCallback(ctx telebot.Context, callbackOpts Callbac
 	case StepAmount:
 		callbackOpts.Transaction.Amount, err = strconv.ParseFloat(ctx.Text(), 64)
 		if err != nil {
-			return ctx.Reply("Amount parse error")
+			return ctx.Reply("⚠️ Please enter a valid number.")
 		}
 
 		return handleTransactionCallback(ctx, callbackOpts)
@@ -226,7 +226,7 @@ func handleTransactionTypeTextCallback(ctx telebot.Context, callbackOpts Callbac
 		callbackOpts.Transaction.Remarks = ctx.Text()
 		return handleTransactionCallback(ctx, callbackOpts)
 	default:
-		return ctx.Reply("yet to be implemented")
+		return ctx.Reply("⚠️ This feature is not available yet.")
 	}
 }
 
@@ -235,7 +235,7 @@ func handleTransactionWithFlagTypeTextCallback(ctx telebot.Context, callbackOpts
 	callbackOpts.Type = TransactionTypeCallback
 	callbackOpts.Transaction, err = parseTransactionFlags(ctx.Text())
 	if err != nil {
-		return ctx.Reply("Data parse error")
+		return ctx.Reply("⚠️ Could not parse transaction data.")
 	}
 	return handleTransactionCallback(ctx, callbackOpts)
 }
@@ -245,20 +245,20 @@ func handleAccountTypeTextCallback(ctx telebot.Context, callbackOpts CallbackOpt
 	case StepAccountInfo:
 		fields := strings.Fields(ctx.Text())
 		if len(fields) < 2 {
-			return ctx.Reply("must contain <id> <wallet name>")
+			return ctx.Reply("⚠️ Please enter: <short-name> <wallet name>")
 		}
 		callbackOpts.Wallet.ShortName = fields[0]
 		callbackOpts.Wallet.Name = strings.Join(fields[1:], " ")
 		return processAccountCreation(ctx, callbackOpts.Wallet)
 	default:
-		return ctx.Reply("yet to be implemented")
+		return ctx.Reply("⚠️ This feature is not available yet.")
 	}
 }
 
 func handleUserTypeTextCallback(ctx telebot.Context, callbackOpts CallbackOptions) error {
 	fields := strings.Fields(ctx.Text())
 	if len(fields) < 2 {
-		return ctx.Reply("must contain <id> <name> <email(optional)>")
+		return ctx.Reply("⚠️ Please enter: <nickname> <full name> [email]")
 	}
 	callbackOpts.User = UserCallbackOptions{NickName: fields[0]}
 	if len(fields) >= 3 && strings.Contains(fields[len(fields)-1], "@") {

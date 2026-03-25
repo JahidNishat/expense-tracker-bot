@@ -62,7 +62,7 @@ func handleReportCallback(ctx telebot.Context, callbackOpts CallbackOptions) err
 
 	pdfFile, err := generateTransactionReportFromTemplate(report)
 	if err != nil {
-		return ctx.Send(err.Error())
+		return ctx.Send(models.ErrCommonResponse(err))
 	}
 	defer os.Remove(pdfFile)
 

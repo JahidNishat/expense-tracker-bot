@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/services/all"
@@ -44,8 +43,7 @@ func processUserCreation(ctx telebot.Context, uop UserCallbackOptions) error {
 		FullName: uop.FullName,
 		Email:    uop.Email,
 	}); err != nil {
-		log.Println(err)
-		return ctx.Send(err.Error())
+		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
 	return ctx.Send(fmt.Sprintf("✅ Contact *%v* added!", uop.FullName), telebot.ModeMarkdown)

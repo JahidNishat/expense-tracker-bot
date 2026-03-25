@@ -90,7 +90,7 @@ func budgetDeleteStart(ctx telebot.Context) error {
 	}
 
 	if len(statuses) == 0 {
-		return ctx.Send("No budgets to delete.")
+		return ctx.Send("No budgets to delete. Use /budget set to add one.")
 	}
 
 	callbackOpts := CallbackOptions{
@@ -120,7 +120,7 @@ func handleBudgetCallback(ctx telebot.Context, callbackOpts CallbackOptions) err
 	case "delete":
 		return handleBudgetDeleteCallback(ctx, callbackOpts)
 	default:
-		return ctx.Send("Invalid budget action")
+		return ctx.Send("⚠️ Invalid budget action.")
 	}
 }
 
@@ -132,7 +132,7 @@ func handleBudgetSetCallback(ctx telebot.Context, callbackOpts CallbackOptions) 
 	case StepBudgetAmount:
 		return processBudgetSet(ctx, callbackOpts)
 	default:
-		return ctx.Send("Invalid budget step")
+		return ctx.Send("⚠️ Invalid budget step.")
 	}
 }
 
@@ -162,7 +162,7 @@ func sendBudgetAmountQuery(ctx telebot.Context, callbackOpts CallbackOptions) er
 func processBudgetSet(ctx telebot.Context, callbackOpts CallbackOptions) error {
 	amount, err := strconv.ParseFloat(strings.TrimSpace(ctx.Text()), 64)
 	if err != nil || amount <= 0 {
-		return ctx.Reply("Please enter a valid positive number.")
+		return ctx.Reply("⚠️ Please enter a valid positive number.")
 	}
 
 	user, err := all.GetServices().User.GetUserByTelegramID(ctx.Sender().ID)
@@ -199,7 +199,7 @@ func handleBudgetTypeTextCallback(ctx telebot.Context, callbackOpts CallbackOpti
 	case StepBudgetAmount:
 		return processBudgetSet(ctx, callbackOpts)
 	default:
-		return ctx.Reply("Invalid budget step")
+		return ctx.Reply("⚠️ Invalid budget step.")
 	}
 }
 
