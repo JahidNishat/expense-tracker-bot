@@ -166,7 +166,13 @@ func handleTransactionCallback(ctx telebot.Context, callbackOpts CallbackOptions
 		if err != nil {
 			return ctx.Send(err.Error())
 		}
-		return ctx.Send("Transaction added successfully!")
+		user, err := all.GetServices().User.GetUserByTelegramID(ctx.Sender().ID)
+		if err != nil {
+			return ctx.Send("Transaction added successfully!")
+		}
+		msg := "Transaction added successfully!"
+		msg += FormatBudgetAlerts(user.ID, callbackOpts.Transaction.Type, callbackOpts.Transaction.SubcategoryID)
+		return ctx.Send(msg, telebot.ModeMarkdown)
 	default:
 		return ctx.Send("Invalid Step")
 	}
@@ -285,5 +291,9 @@ func handleTransactionFromRegularText(ctx telebot.Context) (string, error) {
 		return "", err
 	}
 	txn.UserID = user.ID
-	return txn.Summary(), all.GetServices().Txn.AddTransaction(txn)
+	if err = all.GetServices().Txn.AddTransaction(txn); err != nil {
+		return "", err
+	}
+	summary := txn.Summary() + FormatBudgetAlerts(user.ID, txn.Type, txn.SubcategoryID)
+	return summary, nil
 }
