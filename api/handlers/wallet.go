@@ -53,12 +53,19 @@ func sendAccountTypeQuery(ctx telebot.Context, callbackOpts CallbackOptions) err
 }
 
 func sendAccountInfoQuery(ctx telebot.Context, callbackOpts CallbackOptions) error {
-	msg, err := ctx.Bot().Reply(ctx.Message(), fmt.Sprintf(`Reply to this Message with the following data
+	prompt := fmt.Sprintf(`Reply to this Message with the following data
 
 <short name> <wallet name>
 i.e.: %v
-`, accountExample(callbackOpts.Wallet.Type)), &telebot.SendOptions{
-		ReplyTo: ctx.Message(),
+`, accountExample(callbackOpts.Wallet.Type))
+
+	msg, err := ctx.Bot().Reply(ctx.Message(), prompt, &telebot.SendOptions{
+		ReplyTo:   ctx.Message(),
+		ParseMode: telebot.ModeMarkdown,
+		ReplyMarkup: &telebot.ReplyMarkup{
+			ForceReply:  true,
+			Placeholder: accountExample(callbackOpts.Wallet.Type),
+		},
 	})
 	if err != nil {
 		return err

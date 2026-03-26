@@ -16,12 +16,18 @@ type UserCallbackOptions struct {
 }
 
 func handleUserCallback(ctx telebot.Context, callbackOpts CallbackOptions) error {
-	msg, err := ctx.Bot().Reply(ctx.Message(), `Reply to this Message with the following data
+	prompt := `Reply to this Message with the following data
 
 <nick name> <full name> <email(optional)>
 i.e.: john John Doe john@doe.com
-`, &telebot.SendOptions{
-		ReplyTo: ctx.Message(),
+`
+	msg, err := ctx.Bot().Reply(ctx.Message(), prompt, &telebot.SendOptions{
+		ReplyTo:   ctx.Message(),
+		ParseMode: telebot.ModeMarkdown,
+		ReplyMarkup: &telebot.ReplyMarkup{
+			ForceReply:  true,
+			Placeholder: "john John Doe",
+		},
 	})
 	if err != nil {
 		return err
