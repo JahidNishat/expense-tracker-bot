@@ -178,6 +178,17 @@ func (err ErrAccountAlreadyExist) Error() string {
 	}.Error()
 }
 
+type ErrInvalidTransaction struct {
+	Reason string
+}
+
+func (err ErrInvalidTransaction) Error() string {
+	return StatusError{
+		Status:  http.StatusBadRequest,
+		Message: fmt.Sprintf("invalid transaction: %v", err.Reason),
+	}.Error()
+}
+
 func IsErrNotFound(err error) bool {
 	switch err.(type) {
 	case ErrUserNotFound:
@@ -206,6 +217,10 @@ func IsErrConflict(err error) bool {
 		return true
 	case ErrShelterAlreadyExist:
 		return true
+	case ErrContactAlreadyExist:
+		return true
+	case ErrAccountAlreadyExist:
+		return true
 	default:
 		return false
 	}
@@ -215,6 +230,11 @@ func IsErrBadRequest(err error) bool {
 	switch err.(type) {
 	case ErrUserPasswordMismatch:
 		return true
+	case ErrInvalidTransaction:
+		return true
+	case StatusError:
+		serr, _ := ParseStatusError(err)
+		return serr >= 400 && serr < 500
 	default:
 		return false
 	}
@@ -222,8 +242,9 @@ func IsErrBadRequest(err error) bool {
 
 func ErrCommonResponse(err error) string {
 	logr.DefaultLogger.Errorw("CommonResponse error", "error", err.Error())
-	if IsErrNotFound(err) || IsErrConflict(err) {
-		return err.Error()
+	if IsErrNotFound(err) || IsErrConflict(err) || IsErrBadRequest(err) {
+		_, msg := ParseStatusError(err)
+		return msg
 	}
 	return "Unexpected server error occurred!"
 }

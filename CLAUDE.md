@@ -68,10 +68,9 @@ make all-container            # multi-arch Docker build
 See `.env.example`. Required: `TELEGRAM_BOT_TOKEN`
 
 ## Pending Work
-1. `TransactionService.Undo()` — soft-delete last txn + revert balances
-2. Wire `api/wizard/state.go` into /newtxn handler (64-byte callback_data limit)
-3. Wire `pkg/telegram/SplitMessage()` into /expense, /summary, /allsummary
-4. Optimistic locking in WalletRepo.UpdateBalance using Wallet.Version
+1. Wire `api/wizard/state.go` into /newtxn handler (64-byte callback_data limit)
+2. Telegram response format audit — standardize primitive response formats
+3. Budgeting — allow users to set and track spending budgets
 
 ## Active Context
 Completed full Account/DebtorCreditor -> Wallet/Contact rename. CI/CD passing. Bot responses use emoji-rich formatting.

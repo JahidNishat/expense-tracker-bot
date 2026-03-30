@@ -162,16 +162,17 @@ func handleTransactionCallback(ctx telebot.Context, callbackOpts CallbackOptions
 		callbackOpts.LastSelectedValue = fmt.Sprintf("Selected Contact: *%v*\n\n", callbackOpts.Transaction.ContactName)
 		return sendTransactionRemarksQuery(ctx, callbackOpts)
 	case StepRemarks:
-		err := processTransaction(ctx, callbackOpts.Transaction)
+		txnParams, err := processTransaction(ctx, callbackOpts.Transaction)
 		if err != nil {
 			return ctx.Send(models.ErrCommonResponse(err))
 		}
+
 		user, err := all.GetServices().User.GetUserByTelegramID(ctx.Sender().ID)
 		if err != nil {
 			return ctx.Send("✅ Transaction added!")
 		}
-		msg := "✅ Transaction added!"
-		msg += FormatBudgetAlerts(user.ID, callbackOpts.Transaction.Type, callbackOpts.Transaction.SubcategoryID)
+		msg := txnParams.Summary()
+		msg += FormatBudgetAlerts(user.ID, txnParams.Type, txnParams.SubcategoryID)
 		return ctx.Send(msg, telebot.ModeMarkdown)
 	default:
 		return ctx.Send("⚠️ Invalid step.")

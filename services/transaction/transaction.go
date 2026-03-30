@@ -30,10 +30,13 @@ func NewTxnService(uow styx.UnitOfWork, walletRepo repos.WalletRepository, conta
 
 func (ts *txnService) AddTransaction(txn models.Transaction) error {
 	if txn.UserID == 0 {
-		return fmt.Errorf("userid is required")
+		return models.ErrInvalidTransaction{Reason: "userid is required"}
 	}
 	if txn.SubcategoryID == "" {
-		return fmt.Errorf("subcategory is required")
+		return models.ErrInvalidTransaction{Reason: "subcategory is required"}
+	}
+	if txn.Amount <= 0 {
+		return models.ErrInvalidTransaction{Reason: "amount must be greater than zero"}
 	}
 	if txn.CreatedAt == 0 {
 		txn.CreatedAt = time.Now().Unix()
@@ -59,7 +62,7 @@ func (ts *txnService) AddTransaction(txn models.Transaction) error {
 				return err
 			}
 		case models.BorrowSubID, models.LendRecoverySubID, models.LoanReceivedSubID:
-			return fmt.Errorf("borrow, lend recovery or loan received type transaction should be under Income type")
+			return models.ErrInvalidTransaction{Reason: "borrow, lend recovery or loan received type transaction should be under Income type"}
 		}
 		if err = ts.walletRepo.WithUnitOfWork(uow).UpdateWalletBalance(txn.UserID, txn.SrcID, -txn.Amount); err != nil {
 			return err
@@ -71,7 +74,7 @@ func (ts *txnService) AddTransaction(txn models.Transaction) error {
 				return err
 			}
 		case models.LoanRepaymentSubID, models.BorrowReturnSubID, models.LendSubID:
-			return fmt.Errorf("loan, borrow return or lend type transaction should be under Expense type")
+			return models.ErrInvalidTransaction{Reason: "loan, borrow return or lend type transaction should be under Expense type"}
 		}
 		if err = ts.walletRepo.WithUnitOfWork(uow).UpdateWalletBalance(txn.UserID, txn.DstID, txn.Amount); err != nil {
 			return err

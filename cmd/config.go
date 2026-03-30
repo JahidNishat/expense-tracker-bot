@@ -16,7 +16,7 @@ var cfgFile string
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	if cfgFile == "" {
-		cfgFile = filepath.Join(pkg.ProjectDirectory, "configs", ".expense-tracker.yaml")
+		cfgFile = filepath.Join(pkg.ProjectDirectory, ".configs", ".expense-tracker.yaml")
 	}
 
 	data, err := os.ReadFile(cfgFile)

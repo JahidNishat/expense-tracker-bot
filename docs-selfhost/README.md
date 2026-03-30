@@ -185,7 +185,7 @@ cache:
 
 - Write configuration file
     ```shell
-    mkdir -p $HOME/.expense-tracker/configs
+    mkdir -p $HOME/.sqlite/configs
 
     echo '
     telegram:
@@ -194,13 +194,13 @@ cache:
       type: sqlite
     cache:
       type: map
-    ' > $HOME/.expense-tracker/configs/.expense-tracker.yaml
+    ' > $HOME/.sqlite/configs/.sqlite.yaml
     ```
 
 - Run Expense Tracker Bot
     ```shell
-    docker run -v $HOME/.expense-tracker/configs:/configs \
-      -v $HOME/.expense-tracker:/.expense-tracker \
+    docker run -v $HOME/.sqlite/configs:/configs \
+      -v $HOME/.sqlite:/.sqlite \
       -e TELEGRAM_BOT_TOKEN=<TELEGRAM_BOT_TOKEN> \
       ghcr.io/masudur-rahman/expense-tracker-bot:latest serve
     ```

@@ -12,12 +12,10 @@ ARG GIT_COMMIT=none
 
 WORKDIR /app
 
-# Download dependencies first — this layer rebuilds only when go.mod/go.sum change
 COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
 
-# Build the binary — source changes only rebuild from here
 COPY . .
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
@@ -27,7 +25,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
         -X github.com/masudur-rahman/expense-tracker-bot/cmd.Version=${VERSION} \
         -X github.com/masudur-rahman/expense-tracker-bot/cmd.BuildDate=${BUILD_DATE} \
         -X github.com/masudur-rahman/expense-tracker-bot/cmd.GitCommit=${GIT_COMMIT}" \
-      -o /expense-tracker .
+      -o /bin/expense-tracker .
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Stage 2 · Runtime base
@@ -52,14 +50,15 @@ RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE_NAME} contrib" >> /e
       ttf-mscorefonts-installer \
  && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /tmp/*
 
-COPY --from=builder /expense-tracker /expense-tracker
+WORKDIR /app
+COPY --from=builder /bin/expense-tracker /app/expense-tracker
 
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD ["wget", "-q", "--spider", "http://localhost:8080/healthz"]
 
-ENTRYPOINT ["/expense-tracker"]
+ENTRYPOINT ["/app/expense-tracker"]
 CMD ["serve"]
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -81,6 +80,9 @@ RUN set -x \
  && rm wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${TARGETARCH}.deb \
  && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /tmp/*
 
+RUN mkdir -p /app/configs /app/.sqlite \
+ && chown -R 65535:65535 /app
+
 USER 65535:65535
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -94,5 +96,7 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /tmp/*
 
 ENV CHROME_PATH=/usr/bin/chromium
+RUN mkdir -p /app/configs /app/.sqlite \
+ && chown -R 65535:65535 /app
 
 USER 65535:65535

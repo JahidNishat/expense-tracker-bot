@@ -29,6 +29,9 @@ func handleTransactionWithFlagsCallback(ctx telebot.Context, callbackOpts Callba
 i.e.: 6666 -t=Expense -s=food-rest -f=cash -r="Coffee with no one"
 `, &telebot.SendOptions{
 		ReplyTo: ctx.Message(),
+		ReplyMarkup: &telebot.ReplyMarkup{
+			ForceReply: true,
+		},
 	})
 	if err != nil {
 		return err

@@ -101,6 +101,20 @@ docker-build: # @HELP builds a single-arch Docker image (PDF_GENERATOR=wkhtmltop
 	  -t $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX) \
 	  -f Dockerfile .
 
+.PHONY: docker-run
+docker-run: # @HELP run container built from latest changes
+	@if [ -z "$$(docker images -q $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX))" ]; then \
+		echo "Image not found. Building..."; \
+		$(MAKE) docker-build; \
+	else \
+		echo "Image $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX) already exists. Skipping build."; \
+	fi
+	docker run \
+	  --rm \
+	  --env-file .env \
+	  --volume $(CURDIR)/.configs/.expense-tracker-docker.yaml:/app/.configs/.expense-tracker.yaml \
+	  $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX)
+
 .PHONY: docker-build-push
 docker-build-push: # @HELP builds and pushes multi-arch image (PDF_GENERATOR=wkhtmltopdf|chromedp)
 	docker buildx build --platform linux/amd64,linux/arm64 \
