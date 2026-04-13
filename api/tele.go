@@ -50,6 +50,8 @@ func TeleBotRoutes() (*telebot.Bot, error) {
 	bot.Handle("/sync", handlers.SyncSQLiteDatabase)
 	bot.Handle("/undo", handlers.HandleUndo)
 
+	bot.Handle(telebot.OnContact, handlers.HandleContactShare)
+
 	return bot, nil
 }
 

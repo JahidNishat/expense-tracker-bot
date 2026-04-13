@@ -18,6 +18,11 @@ import (
 )
 
 func StartTrackingExpenses(ctx telebot.Context) error {
+	if payload := ctx.Message().Payload; strings.HasPrefix(payload, "login_") {
+		sessionID := strings.TrimPrefix(payload, "login_")
+		return HandleQRLogin(sessionID, ctx)
+	}
+
 	us := all.GetServices().User
 	user, err := us.GetUserByTelegramID(ctx.Sender().ID)
 	if err == nil {
