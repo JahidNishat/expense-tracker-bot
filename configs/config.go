@@ -13,10 +13,20 @@ import (
 var TrackerConfig ExpenseConfiguration
 
 type ExpenseConfiguration struct {
-	Telegram Telegram       `json:"telegram" yaml:"telegram"`
-	Database DatabaseConfig `json:"database" yaml:"database"`
-	Cache    cache.Config   `json:"cache" yaml:"cache"`
-	System   SystemConfig   `json:"system" yaml:"system"`
+	Telegram     Telegram            `json:"telegram" yaml:"telegram"`
+	Database     DatabaseConfig      `json:"database" yaml:"database"`
+	Cache        cache.Config        `json:"cache" yaml:"cache"`
+	System       SystemConfig        `json:"system" yaml:"system"`
+	WebDashboard WebDashboardConfig  `json:"webDashboard" yaml:"webDashboard"`
+}
+
+// WebDashboardConfig holds settings for the optional web dashboard.
+type WebDashboardConfig struct {
+	Enabled       bool   `json:"enabled" yaml:"enabled"`
+	JWTSecret     string `json:"jwtSecret" yaml:"jwtSecret"`
+	RefreshSecret string `json:"refreshSecret" yaml:"refreshSecret"`
+	BotUsername   string `json:"botUsername" yaml:"botUsername"`
+	Port          string `json:"port" yaml:"port"`
 }
 
 type Telegram struct {
@@ -112,5 +122,22 @@ func (c *ExpenseConfiguration) OverrideWithEnv() {
 		if c.System.AIGenerator == "" {
 			c.System.AIGenerator = "open-router"
 		}
+	}
+
+	// Web Dashboard Overrides
+	if os.Getenv("WEB_ENABLED") == "true" {
+		c.WebDashboard.Enabled = true
+	}
+	if secret := os.Getenv("WEB_JWT_SECRET"); secret != "" {
+		c.WebDashboard.JWTSecret = secret
+	}
+	if secret := os.Getenv("WEB_REFRESH_SECRET"); secret != "" {
+		c.WebDashboard.RefreshSecret = secret
+	}
+	if username := os.Getenv("WEB_BOT_USERNAME"); username != "" {
+		c.WebDashboard.BotUsername = username
+	}
+	if port := os.Getenv("WEB_PORT"); port != "" {
+		c.WebDashboard.Port = port
 	}
 }
