@@ -23,10 +23,26 @@ func NewRouter(jwtSecret, corsOrigin string) chi.Router {
 		r.Post("/auth/refresh", HandleRefresh)
 		r.Post("/auth/logout", HandleLogout)
 
-		// Protected routes (Phase 2+)
+		// Protected routes
 		r.Group(func(r chi.Router) {
 			r.Use(JWTAuth(jwtSecret))
-			// Endpoints added in later phases
+
+			r.Get("/transactions", HandleListTransactions)
+			r.Post("/transactions", HandleCreateTransaction)
+			r.Put("/transactions/{id}", HandleUpdateTransaction)
+			r.Delete("/transactions/{id}", HandleDeleteTransaction)
+
+			r.Get("/wallets", HandleListWallets)
+			r.Get("/contacts", HandleListContacts)
+
+			r.Get("/budgets", HandleListBudgets)
+			r.Post("/budgets", HandleSetBudget)
+			r.Delete("/budgets/{categoryID}", HandleDeleteBudget)
+			r.Get("/budgets/alerts", HandleBudgetAlerts)
+
+			r.Get("/summary/charts", HandleChartData)
+			r.Get("/categories", HandleListCategories)
+			r.Get("/profile", HandleGetProfile)
 		})
 	})
 

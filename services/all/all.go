@@ -13,6 +13,7 @@ import (
 	authsvc "github.com/masudur-rahman/expense-tracker-bot/services/auth"
 	budgetsvc "github.com/masudur-rahman/expense-tracker-bot/services/budgets"
 	eventsvc "github.com/masudur-rahman/expense-tracker-bot/services/event"
+	summarysvc "github.com/masudur-rahman/expense-tracker-bot/services/summary"
 	txnsvc "github.com/masudur-rahman/expense-tracker-bot/services/transaction"
 	usersvc "github.com/masudur-rahman/expense-tracker-bot/services/user"
 	walletsvc "github.com/masudur-rahman/expense-tracker-bot/services/wallets"
@@ -27,6 +28,7 @@ type Services struct {
 	Txn     services.TransactionService
 	Event   services.EventService
 	Budget  services.BudgetService
+	Summary services.SummaryService
 	Auth    services.AuthService
 }
 
@@ -50,6 +52,7 @@ func InitiateSQLServices(uow styx.UnitOfWork, logger logr.Logger) {
 	txnSvc := txnsvc.NewTxnService(uow, walletRepo, contactRepo, txnRepo, eventRepo)
 	eventSvc := eventsvc.NewEventService(eventRepo)
 	budgetSvc := budgetsvc.NewBudgetService(budgetRepo, txnRepo)
+	summarySvc := summarysvc.NewSummaryService(txnRepo, walletRepo, budgetRepo)
 
 	svc = &Services{
 		User:    userSvc,
@@ -58,6 +61,7 @@ func InitiateSQLServices(uow styx.UnitOfWork, logger logr.Logger) {
 		Txn:     txnSvc,
 		Event:   eventSvc,
 		Budget:  budgetSvc,
+		Summary: summarySvc,
 	}
 }
 
