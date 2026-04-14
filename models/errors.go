@@ -167,6 +167,17 @@ func (err ErrBudgetNotFound) Error() string {
 	}.Error()
 }
 
+type ErrRefreshTokenNotFound struct {
+	UUID string
+}
+
+func (err ErrRefreshTokenNotFound) Error() string {
+	return StatusError{
+		Status:  http.StatusNotFound,
+		Message: fmt.Sprintf("refresh token not found: %v", err.UUID),
+	}.Error()
+}
+
 type ErrAccountAlreadyExist struct {
 	ShortName string
 }
@@ -204,6 +215,8 @@ func IsErrNotFound(err error) bool {
 	case ErrContactNotFound:
 		return true
 	case ErrBudgetNotFound:
+		return true
+	case ErrRefreshTokenNotFound:
 		return true
 
 	default:
