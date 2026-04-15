@@ -1,6 +1,9 @@
 package all
 
 import (
+	"strings"
+	"sync"
+
 	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
 	authmod "github.com/masudur-rahman/expense-tracker-bot/modules/auth"
 	authrepo "github.com/masudur-rahman/expense-tracker-bot/repos/auth"
@@ -32,9 +35,25 @@ type Services struct {
 	Auth    services.AuthService
 }
 
-var svc *Services
+var (
+	svc   *Services
+	svcMu sync.RWMutex
+)
+
+// webConfig stores web service init params for re-initialization on DB reconnect.
+type webConfig struct {
+	messenger     authmod.Messenger
+	jwtSecret     string
+	refreshSecret string
+	botUsername    string
+	baseURL       string
+}
+
+var webCfg *webConfig
 
 func GetServices() *Services {
+	svcMu.RLock()
+	defer svcMu.RUnlock()
 	return svc
 }
 
@@ -54,7 +73,15 @@ func InitiateSQLServices(uow styx.UnitOfWork, logger logr.Logger) {
 	budgetSvc := budgetsvc.NewBudgetService(budgetRepo, txnRepo)
 	summarySvc := summarysvc.NewSummaryService(txnRepo, walletRepo, budgetRepo)
 
-	svc = &Services{
+	// Preserve Auth service across DB reconnects
+	var existingAuth services.AuthService
+	svcMu.RLock()
+	if svc != nil {
+		existingAuth = svc.Auth
+	}
+	svcMu.RUnlock()
+
+	newSvc := &Services{
 		User:    userSvc,
 		Wallet:  walletSvc,
 		Contact: contactSvc,
@@ -62,21 +89,48 @@ func InitiateSQLServices(uow styx.UnitOfWork, logger logr.Logger) {
 		Event:   eventSvc,
 		Budget:  budgetSvc,
 		Summary: summarySvc,
+		Auth:    existingAuth,
 	}
+
+	// Re-initialize auth with new repos if web services were configured
+	if webCfg != nil {
+		ar := authrepo.NewSQLAuthRepository(uow.SQL, logger)
+		newSvc.Auth = authsvc.NewAuthService(
+			userRepo, ar, webCfg.messenger,
+			webCfg.jwtSecret, webCfg.refreshSecret, webCfg.botUsername, webCfg.baseURL,
+			logger,
+		)
+	}
+
+	svcMu.Lock()
+	svc = newSvc
+	svcMu.Unlock()
 }
 
 // InitiateWebServices wires the auth service when the web dashboard is enabled.
 func InitiateWebServices(
 	messenger authmod.Messenger,
-	jwtSecret, refreshSecret, botUsername string,
+	jwtSecret, refreshSecret, botUsername, baseURL string,
 	uow styx.UnitOfWork,
 	logger logr.Logger,
 ) {
+	botUsername = strings.TrimSpace(strings.TrimPrefix(botUsername, "@"))
+	webCfg = &webConfig{
+		messenger:     messenger,
+		jwtSecret:     jwtSecret,
+		refreshSecret: refreshSecret,
+		botUsername:    botUsername,
+		baseURL:       baseURL,
+	}
+
 	userRepo := user.NewSQLUserRepository(uow.SQL, logger)
 	ar := authrepo.NewSQLAuthRepository(uow.SQL, logger)
+
+	svcMu.Lock()
 	svc.Auth = authsvc.NewAuthService(
 		userRepo, ar, messenger,
-		jwtSecret, refreshSecret, botUsername,
+		jwtSecret, refreshSecret, botUsername, baseURL,
 		logger,
 	)
+	svcMu.Unlock()
 }

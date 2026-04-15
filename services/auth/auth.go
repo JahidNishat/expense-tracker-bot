@@ -3,6 +3,8 @@ package auth
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
@@ -30,7 +32,9 @@ type authService struct {
 	jwtSecret     string
 	refreshSecret string
 	botUsername    string
+	baseURL       string
 	logger        logr.Logger
+	refreshMu     sync.Mutex
 }
 
 // NewAuthService creates a new AuthService.
@@ -38,7 +42,7 @@ func NewAuthService(
 	userRepo repos.UserRepository,
 	authRepo repos.AuthRepository,
 	messenger authmod.Messenger,
-	jwtSecret, refreshSecret, botUsername string,
+	jwtSecret, refreshSecret, botUsername, baseURL string,
 	logger logr.Logger,
 ) services.AuthService {
 	return &authService{
@@ -48,6 +52,7 @@ func NewAuthService(
 		jwtSecret:     jwtSecret,
 		refreshSecret: refreshSecret,
 		botUsername:    botUsername,
+		baseURL:       strings.TrimRight(baseURL, "/"),
 		logger:        logger,
 	}
 }
@@ -97,7 +102,7 @@ func (s *authService) VerifyOTP(identifier, code string) (*authmod.TokenPair, er
 }
 
 func (s *authService) InitQRSession() (string, string, error) {
-	sessionID := uuid.New().String()
+	sessionID := strings.ReplaceAll(uuid.New().String(), "-", "")
 	session := qrSession{Status: qrStatusPending}
 	data, _ := json.Marshal(session)
 
@@ -105,7 +110,8 @@ func (s *authService) InitQRSession() (string, string, error) {
 		return "", "", fmt.Errorf("cache qr session: %w", err)
 	}
 
-	deepLink := fmt.Sprintf("https://t.me/%s?start=login_%s", s.botUsername, sessionID)
+	deepLink := fmt.Sprintf("%s/api/v1/auth/qr/redirect?session=%s", s.baseURL, sessionID)
+	s.logger.Infow("QR session initialized", "sessionID", sessionID, "deepLink", deepLink)
 	return sessionID, deepLink, nil
 }
 
@@ -163,33 +169,70 @@ func (s *authService) PollQRSession(sessionID string) (*authmod.TokenPair, strin
 }
 
 func (s *authService) RefreshTokens(refreshToken string) (*authmod.TokenPair, error) {
+	s.refreshMu.Lock()
+	defer s.refreshMu.Unlock()
+
 	claims, err := authmod.ParseRefreshToken(refreshToken, s.refreshSecret)
 	if err != nil {
+		s.logger.Warnw("token_refresh_failed", "reason", "parse_error", "error", err.Error())
 		return nil, models.StatusError{Status: 401, Message: "invalid refresh token"}
 	}
 
 	dbToken, err := s.authRepo.GetRefreshTokenByUUID(claims.TokenUUID)
 	if err != nil {
-		// Reuse detection: token not found means it was already rotated
-		_ = s.authRepo.RevokeAllUserTokens(claims.UserID)
-		return nil, models.StatusError{Status: 401, Message: "refresh token reuse detected"}
+		if models.IsErrNotFound(err) {
+			// Reuse detection: token not found means it was already rotated
+			// CHECK CACHE: If we recently successfully refreshed this token, return that result.
+			if cached, ok := cache.GetCache("refreshed:" + claims.TokenUUID); ok {
+				var pair authmod.TokenPair
+				if err := json.Unmarshal([]byte(cached), &pair); err == nil {
+					s.logger.Infow("token_refresh_concurrent_success", "uuid", claims.TokenUUID)
+					return &pair, nil
+				}
+			}
+
+			s.logger.Warnw("token_refresh_failed", "reason", "token_not_found", "uuid", claims.TokenUUID, "userID", claims.UserID)
+			_ = s.authRepo.RevokeAllUserTokens(claims.UserID)
+			return nil, models.StatusError{Status: 401, Message: "refresh token reuse detected"}
+		}
+		s.logger.Errorw("token_refresh_failed", "reason", "db_error", "error", err.Error())
+		return nil, fmt.Errorf("lookup refresh token: %w", err)
 	}
 
 	if dbToken.Revoked == 1 {
+		// CHECK CACHE: If we recently successfully refreshed this token, return that result.
+		if cached, ok := cache.GetCache("refreshed:" + claims.TokenUUID); ok {
+			var pair authmod.TokenPair
+			if err := json.Unmarshal([]byte(cached), &pair); err == nil {
+				s.logger.Infow("token_refresh_concurrent_success", "uuid", claims.TokenUUID)
+				return &pair, nil
+			}
+		}
+
+		s.logger.Warnw("token_refresh_failed", "reason", "token_revoked", "uuid", claims.TokenUUID, "userID", claims.UserID)
 		_ = s.authRepo.RevokeAllUserTokens(claims.UserID)
 		return nil, models.StatusError{Status: 401, Message: "refresh token revoked"}
 	}
 
 	if err := s.authRepo.RevokeRefreshToken(claims.TokenUUID); err != nil {
+		s.logger.Errorw("token_refresh_failed", "reason", "revoke_error", "error", err.Error())
 		return nil, err
 	}
 
 	user, err := s.userRepo.GetUserByID(claims.UserID)
 	if err != nil {
+		s.logger.Errorw("token_refresh_failed", "reason", "user_not_found", "userID", claims.UserID)
 		return nil, err
 	}
 
-	return s.issueTokenPair(user)
+	s.logger.Infow("token_refreshed", "userID", user.ID)
+	pair, err := s.issueTokenPair(user)
+	if err == nil {
+		// Cache the successful result for 15 seconds to handle concurrent requests
+		data, _ := json.Marshal(pair)
+		_ = cache.SetCache("refreshed:"+claims.TokenUUID, string(data), 15*time.Second)
+	}
+	return pair, err
 }
 
 func (s *authService) Logout(refreshToken string) error {

@@ -114,9 +114,10 @@ func (s *budgetService) CheckBudgetAlerts(userID int64, subcategoryID string) ([
 			continue
 		}
 		alerts = append(alerts, models.BudgetAlert{
+			CategoryID:   b.CategoryID,
 			CategoryName: s.resolveName(b.CategoryID),
 			Spent:        spent,
-			Limit:        b.Amount,
+			BudgetAmount: b.Amount,
 			Percent:      pct,
 			Exceeded:     pct >= 100,
 		})

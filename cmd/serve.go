@@ -70,7 +70,11 @@ to quickly create a Cobra application.`,
 		if cfg := configs.TrackerConfig.WebDashboard; cfg.Enabled {
 			messenger := api.NewBotMessenger(bot)
 			uow := configs.GetUnitOfWork()
-			all.InitiateWebServices(messenger, cfg.JWTSecret, cfg.RefreshSecret, cfg.BotUsername, uow, logr.DefaultLogger)
+			botUsername := cfg.BotUsername
+			if botUsername == "" && bot.Me != nil {
+				botUsername = bot.Me.Username
+			}
+			all.InitiateWebServices(messenger, cfg.JWTSecret, cfg.RefreshSecret, botUsername, cfg.BaseURL, uow, logr.DefaultLogger)
 
 			port := cfg.Port
 			if port == "" {

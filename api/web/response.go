@@ -3,6 +3,8 @@ package web
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
 )
 
 const refreshCookieName = "refresh_token"
@@ -19,8 +21,9 @@ func WriteJSON(w http.ResponseWriter, status int, data any) {
 	_ = json.NewEncoder(w).Encode(data)
 }
 
-// WriteError sends a JSON error response.
+// WriteError sends a JSON error response and logs the error.
 func WriteError(w http.ResponseWriter, status int, code, message string) {
+	logr.DefaultLogger.Errorw("web_error", "status", status, "code", code, "message", message)
 	WriteJSON(w, status, errorResponse{Code: code, Message: message})
 }
 
@@ -30,7 +33,10 @@ func ReadJSON(r *http.Request, target any) error {
 	return json.NewDecoder(r.Body).Decode(target)
 }
 
-// SetRefreshCookie sets the refresh token as an httpOnly secure cookie.
+// SetRefreshCookie sets the refresh token as an httpOnly cookie.
+// Uses SameSite=None + Secure for cross-origin (frontend != backend port).
+// In production behind HTTPS this is secure; on localhost browsers
+// permit Secure cookies on 127.0.0.1.
 func SetRefreshCookie(w http.ResponseWriter, token string, maxAge int) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     refreshCookieName,
@@ -38,8 +44,8 @@ func SetRefreshCookie(w http.ResponseWriter, token string, maxAge int) {
 		Path:     "/",
 		MaxAge:   maxAge,
 		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
 	})
 }
 

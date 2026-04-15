@@ -72,6 +72,51 @@ func HandleGetProfile(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, user)
 }
 
+// HandleUpdateProfile handles PUT /profile.
+func HandleUpdateProfile(w http.ResponseWriter, r *http.Request) {
+	claims, ok := UserFromContext(r.Context())
+	if !ok {
+		WriteError(w, http.StatusUnauthorized, "unauthorized", "missing claims")
+		return
+	}
+
+	var req struct {
+		MobileNumber string `json:"mobileNumber"`
+		Timezone     string `json:"timezone"`
+	}
+	if err := ReadJSON(r, &req); err != nil {
+		WriteError(w, http.StatusBadRequest, "bad_request", "invalid request body")
+		return
+	}
+
+	user, err := all.GetServices().User.GetUserByID(claims.UserID)
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "profile_failed", err.Error())
+		return
+	}
+
+	user.MobileNumber = req.MobileNumber
+	user.Timezone = req.Timezone
+
+	if err := all.GetServices().User.UpdateUser(claims.UserID, user); err != nil {
+		WriteError(w, http.StatusInternalServerError, "update_failed", err.Error())
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, user)
+}
+
+// HandleListSubcategories handles GET /subcategories.
+func HandleListSubcategories(w http.ResponseWriter, r *http.Request) {
+	catID := r.URL.Query().Get("catId")
+	subs, err := all.GetServices().Txn.ListTxnSubcategories(catID)
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "list_failed", err.Error())
+		return
+	}
+	WriteJSON(w, http.StatusOK, subs)
+}
+
 func intParam(r *http.Request, key string, fallback int) int {
 	val := r.URL.Query().Get(key)
 	if val == "" {

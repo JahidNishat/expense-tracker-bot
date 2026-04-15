@@ -10,6 +10,7 @@ import (
 )
 
 const testSecret = "test-jwt-secret"
+
 const testRefreshSecret = "test-refresh-secret"
 
 func TestGenerateAccessToken_roundtrip(t *testing.T) {

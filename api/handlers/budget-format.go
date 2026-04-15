@@ -79,12 +79,12 @@ func FormatBudgetAlerts(userID int64, txnType models.TransactionType, subcategor
 		if a.Exceeded {
 			sb.WriteString(fmt.Sprintf(
 				"\n🚨 *Budget exceeded!* %s: ৳%s/৳%s (%.0f%%)",
-				a.CategoryName, FormatBDT(a.Spent), FormatBDT(a.Limit), a.Percent,
+				a.CategoryName, FormatBDT(a.Spent), FormatBDT(a.BudgetAmount), a.Percent,
 			))
 		} else {
 			sb.WriteString(fmt.Sprintf(
 				"\n⚠️ *Budget warning!* %s: ৳%s/৳%s (%.0f%%)",
-				a.CategoryName, FormatBDT(a.Spent), FormatBDT(a.Limit), a.Percent,
+				a.CategoryName, FormatBDT(a.Spent), FormatBDT(a.BudgetAmount), a.Percent,
 			))
 		}
 	}

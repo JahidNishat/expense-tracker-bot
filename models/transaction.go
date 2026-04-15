@@ -31,19 +31,19 @@ const (
 )
 
 type Transaction struct {
-	ID            int64 `db:"id,pk autoincr"`
-	UserID        int64
-	Amount        float64
-	SubcategoryID string
-	Type          TransactionType
-	SrcID         string
-	DstID         string
-	ContactName   string
-	Timestamp     int64
-	Remarks       string
+	ID            int64           `db:"id,pk autoincr" json:"id"`
+	UserID        int64           `json:"userId"`
+	Amount        float64         `json:"amount"`
+	SubcategoryID string          `json:"subcategoryId"`
+	Type          TransactionType `json:"type"`
+	SrcID         string          `json:"srcId"`
+	DstID         string          `json:"dstId"`
+	ContactName   string          `json:"contactName"`
+	Timestamp     int64           `json:"timestamp"`
+	Remarks       string          `json:"remarks"`
 
-	DeletedAt int64 `db:"deleted_at"` // 0 = active; non-zero = unix timestamp of soft-delete
-	CreatedAt int64 `db:"created_at"` // unix timestamp of creation
+	DeletedAt int64 `db:"deleted_at" json:"deletedAt"` // 0 = active; non-zero = unix timestamp of soft-delete
+	CreatedAt int64 `db:"created_at" json:"createdAt"` // unix timestamp of creation
 }
 
 func (Transaction) TableName() string {
@@ -119,8 +119,8 @@ func formatAccount(id string) string {
 }
 
 type TxnCategory struct {
-	ID   string `db:",pk"`
-	Name string
+	ID   string `db:",pk" json:"id"`
+	Name string `json:"name"`
 }
 
 func (TxnCategory) TableName() string {
@@ -128,10 +128,10 @@ func (TxnCategory) TableName() string {
 }
 
 type TxnSubcategory struct {
-	ID    string `db:",pk"`
-	Name  string
-	CatID string
-	Hint  string `db:"-"` // AI-only context, not persisted
+	ID    string `db:",pk" json:"id"`
+	Name  string `json:"name"`
+	CatID string `json:"catId"`
+	Hint  string `db:"-" json:"-"` // AI-only context, not persisted
 }
 
 func (TxnSubcategory) TableName() string {

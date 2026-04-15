@@ -13,11 +13,11 @@ import (
 var TrackerConfig ExpenseConfiguration
 
 type ExpenseConfiguration struct {
-	Telegram     Telegram            `json:"telegram" yaml:"telegram"`
-	Database     DatabaseConfig      `json:"database" yaml:"database"`
-	Cache        cache.Config        `json:"cache" yaml:"cache"`
-	System       SystemConfig        `json:"system" yaml:"system"`
-	WebDashboard WebDashboardConfig  `json:"webDashboard" yaml:"webDashboard"`
+	Telegram     Telegram           `json:"telegram" yaml:"telegram"`
+	Database     DatabaseConfig     `json:"database" yaml:"database"`
+	Cache        cache.Config       `json:"cache" yaml:"cache"`
+	System       SystemConfig       `json:"system" yaml:"system"`
+	WebDashboard WebDashboardConfig `json:"webDashboard" yaml:"webDashboard"`
 }
 
 // WebDashboardConfig holds settings for the optional web dashboard.
@@ -26,8 +26,9 @@ type WebDashboardConfig struct {
 	JWTSecret     string `json:"jwtSecret" yaml:"jwtSecret"`
 	RefreshSecret string `json:"refreshSecret" yaml:"refreshSecret"`
 	BotUsername   string `json:"botUsername" yaml:"botUsername"`
-	CORSOrigin   string `json:"corsOrigin" yaml:"corsOrigin"`
+	CORSOrigin    string `json:"corsOrigin" yaml:"corsOrigin"`
 	Port          string `json:"port" yaml:"port"`
+	BaseURL       string `json:"baseURL" yaml:"baseURL"`
 }
 
 type Telegram struct {
@@ -143,5 +144,8 @@ func (c *ExpenseConfiguration) OverrideWithEnv() {
 	}
 	if port := os.Getenv("WEB_PORT"); port != "" {
 		c.WebDashboard.Port = port
+	}
+	if baseURL := os.Getenv("WEB_BASE_URL"); baseURL != "" {
+		c.WebDashboard.BaseURL = baseURL
 	}
 }

@@ -25,13 +25,15 @@ const (
 	GroupByTxnType        SummaryGroupBy = "Transaction Type"
 	GroupByTxnCategory    SummaryGroupBy = "Category"
 	GroupByTxnSubCategory SummaryGroupBy = "Subcategory"
+)
 
-	DurationOneWeek   SummaryDuration = "1 Week"
-	DurationThisMonth SummaryDuration = "This Month"
-	DurationOneMonth  SummaryDuration = "One Month"
-	DurationHalfYear  SummaryDuration = "Last 6 Months"
-	DurationThisYear  SummaryDuration = "This Year"
-	DurationOneYear   SummaryDuration = "One Year"
+const (
+	DurationOneWeek   SummaryDuration = "one_week"
+	DurationThisMonth SummaryDuration = "this_month"
+	DurationOneMonth  SummaryDuration = "one_month"
+	DurationHalfYear  SummaryDuration = "half_year"
+	DurationThisYear  SummaryDuration = "this_year"
+	DurationOneYear   SummaryDuration = "one_year"
 )
 
 type SummaryCallbackOptions struct {
@@ -119,7 +121,7 @@ func handleSummaryCallback(ctx telebot.Context, callbackOpts CallbackOptions) er
 }
 
 func processSummary(ctx telebot.Context, smop SummaryCallbackOptions) (gqtypes.SummaryGroups, error) {
-	now, startTime := time.Now(), calculateStartTime(smop.Duration)
+	now, startTime := time.Now(), CalculateStartTime(smop.Duration)
 
 	svc := all.GetServices()
 	user, err := svc.User.GetUserByTelegramID(ctx.Sender().ID)
@@ -189,11 +191,21 @@ func sendSummaryDurationQuery(ctx telebot.Context, callbackOpts CallbackOptions)
 }
 
 func generateSummaryDurationInlineButton(callbackOpts CallbackOptions) []telebot.InlineButton {
-	durations := []SummaryDuration{DurationOneWeek, DurationThisMonth, DurationOneMonth, DurationHalfYear, DurationThisYear, DurationOneYear}
-	inlineButtons := make([]telebot.InlineButton, 0, 3)
-	for _, duration := range durations {
-		callbackOpts.Summary.Duration = duration
-		btn := generateInlineButton(callbackOpts, duration)
+	durations := []struct {
+		val   SummaryDuration
+		label string
+	}{
+		{DurationOneWeek, "1 Week"},
+		{DurationThisMonth, "This Month"},
+		{DurationOneMonth, "One Month"},
+		{DurationHalfYear, "6 Months"},
+		{DurationThisYear, "This Year"},
+		{DurationOneYear, "1 Year"},
+	}
+	inlineButtons := make([]telebot.InlineButton, 0, len(durations))
+	for _, d := range durations {
+		callbackOpts.Summary.Duration = d.val
+		btn := generateInlineButton(callbackOpts, d.label)
 		inlineButtons = append(inlineButtons, btn)
 	}
 

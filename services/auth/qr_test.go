@@ -22,7 +22,7 @@ func TestInitQRSession_success(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, sessionID)
-	assert.Contains(t, deepLink, "t.me/testbot?start=login_")
+	assert.Contains(t, deepLink, "https://example.com/api/v1/auth/qr/redirect?session=")
 }
 
 func TestConfirmQRSession_success(t *testing.T) {

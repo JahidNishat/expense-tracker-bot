@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/configs"
+	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/modules/google"
 	"github.com/masudur-rahman/expense-tracker-bot/pkg"
@@ -18,37 +19,36 @@ import (
 )
 
 func StartTrackingExpenses(ctx telebot.Context) error {
-	if payload := ctx.Message().Payload; strings.HasPrefix(payload, "login_") {
-		sessionID := strings.TrimPrefix(payload, "login_")
-		return HandleQRLogin(sessionID, ctx)
-	}
+	payload := ctx.Message().Payload
+	logr.DefaultLogger.Infof("Start command received from %d with payload: %s", ctx.Sender().ID, payload)
 
 	us := all.GetServices().User
 	user, err := us.GetUserByTelegramID(ctx.Sender().ID)
-	if err == nil {
-		if err = ensureDefaultWallet(user.ID); err != nil {
+	if err != nil {
+		if !models.IsErrNotFound(err) {
 			return ctx.Send(models.ErrCommonResponse(err))
 		}
-		return sendStartText(ctx)
-	}
-	if !models.IsErrNotFound(err) {
-		return ctx.Send(models.ErrCommonResponse(err))
-	}
-	user = &models.Profile{
-		TelegramID: ctx.Sender().ID,
-		Username:   ctx.Sender().Username,
-		FirstName:  ctx.Sender().FirstName,
-		LastName:   ctx.Sender().LastName,
-	}
-	if err = us.SignUp(user); err != nil {
-		return ctx.Send(models.ErrCommonResponse(err))
+		user = &models.Profile{
+			TelegramID: ctx.Sender().ID,
+			Username:   ctx.Sender().Username,
+			FirstName:  ctx.Sender().FirstName,
+			LastName:   ctx.Sender().LastName,
+		}
+		if err = us.SignUp(user); err != nil {
+			return ctx.Send(models.ErrCommonResponse(err))
+		}
+		ctx.Set("new-user", true)
 	}
 
 	if err = ensureDefaultWallet(user.ID); err != nil {
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	ctx.Set("new-user", true)
+	if strings.HasPrefix(payload, "login_") {
+		sessionID := strings.TrimPrefix(payload, "login_")
+		return HandleQRLogin(sessionID, ctx)
+	}
+
 	return sendStartText(ctx)
 }
 

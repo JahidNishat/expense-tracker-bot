@@ -19,6 +19,7 @@ type qrSession struct {
 }
 
 func otpKey(userID int64) string { return fmt.Sprintf("otp:%d", userID) }
+
 func qrKey(sessionID string) string { return fmt.Sprintf("qr:%s", sessionID) }
 
 func (s *authService) lookupUser(identifier string) (*models.Profile, error) {

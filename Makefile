@@ -116,6 +116,14 @@ docker-run: # @HELP run container built from latest changes
 	  --volume $(CURDIR)/.configs/.expense-tracker-docker.yaml:/app/.configs/.expense-tracker.yaml \
 	  $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX)
 
+.PHONY: docker-build-web
+docker-build-web: # @HELP builds the web frontend Docker image
+	docker build -t $(DOCKER_IMAGE)-web:$(VERSION) web/
+
+.PHONY: docker-compose-up
+docker-compose-up: # @HELP runs backend + frontend via Docker Compose
+	docker compose up --build
+
 .PHONY: docker-build-push
 docker-build-push: # @HELP builds and pushes multi-arch image (PDF_GENERATOR=wkhtmltopdf|chromedp)
 	docker buildx build --platform linux/amd64,linux/arm64 \

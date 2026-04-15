@@ -106,6 +106,11 @@ func NewTransaction(ctx telebot.Context) error {
 }
 
 func Callback(ctx telebot.Context) error {
+	data := ctx.Callback().Data
+	if strings.HasPrefix(data, qrApprovePrefix) || strings.HasPrefix(data, qrDenyPrefix) {
+		return HandleQRCallback(ctx)
+	}
+
 	callbackOpts, err := parseCallbackOptions(ctx)
 	if err != nil {
 		return ctx.Send("⚠️ Invalid data or data expired.")

@@ -43,11 +43,21 @@ func TransactionReportCallback(ctx telebot.Context) error {
 }
 
 func generateReportDurationInlineButton(callbackOpts CallbackOptions) []telebot.InlineButton {
-	durations := []SummaryDuration{DurationOneWeek, DurationThisMonth, DurationOneMonth, DurationHalfYear, DurationThisYear, DurationOneYear}
-	inlineButtons := make([]telebot.InlineButton, 0, 3)
-	for _, duration := range durations {
-		callbackOpts.Report.Duration = duration
-		btn := generateInlineButton(callbackOpts, duration)
+	durations := []struct {
+		val   SummaryDuration
+		label string
+	}{
+		{DurationOneWeek, "1 Week"},
+		{DurationThisMonth, "This Month"},
+		{DurationOneMonth, "One Month"},
+		{DurationHalfYear, "6 Months"},
+		{DurationThisYear, "This Year"},
+		{DurationOneYear, "1 Year"},
+	}
+	inlineButtons := make([]telebot.InlineButton, 0, len(durations))
+	for _, d := range durations {
+		callbackOpts.Report.Duration = d.val
+		btn := generateInlineButton(callbackOpts, d.label)
 		inlineButtons = append(inlineButtons, btn)
 	}
 
@@ -60,7 +70,7 @@ func handleReportCallback(ctx telebot.Context, callbackOpts CallbackOptions) err
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	pdfFile, err := generateTransactionReportFromTemplate(report)
+	pdfFile, err := GenerateTransactionReportFromTemplate(report, "")
 	if err != nil {
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
@@ -82,7 +92,7 @@ func generateSampleJSONReport(report gqtypes.Report) error { //nolint:unused // 
 }
 
 func generateReport(ctx telebot.Context, rop ReportCallbackOptions) (gqtypes.Report, error) {
-	now, startTime := time.Now(), calculateStartTime(rop.Duration)
+	now, startTime := time.Now(), CalculateStartTime(rop.Duration)
 
 	svc := all.GetServices()
 	user, err := svc.User.GetUserByTelegramID(ctx.Sender().ID)
@@ -106,28 +116,28 @@ func generateReport(ctx telebot.Context, rop ReportCallbackOptions) (gqtypes.Rep
 	}
 	report.Transactions = txnApis
 
-	summary, err := buildSummary(svc, txns)
+	summary, err := BuildSummary(svc, txns)
 	if err != nil {
 		return gqtypes.Report{}, err
 	}
 	report.Summary = summary
 
 	report.TypeSummary = gqtypes.SortMapToSlice(summary.Type)
-	report.CategorySummary, err = buildTypeSeparatedSummary(svc, txns, categoryKeyFn, svc.Txn.GetTxnCategoryName)
+	report.CategorySummary, err = BuildTypeSeparatedSummary(svc, txns, CategoryKeyFn, svc.Txn.GetTxnCategoryName)
 	if err != nil {
 		return gqtypes.Report{}, err
 	}
-	report.SubcategorySummary, err = buildTypeSeparatedSummary(svc, txns, subcategoryKeyFn, svc.Txn.GetTxnSubcategoryName)
+	report.SubcategorySummary, err = BuildTypeSeparatedSummary(svc, txns, SubcategoryKeyFn, svc.Txn.GetTxnSubcategoryName)
 	if err != nil {
 		return gqtypes.Report{}, err
 	}
 
-	report.TotalAmount, report.NetBalance = computeTotals(txns)
+	report.TotalAmount, report.NetBalance = ComputeTotals(txns)
 
 	return report, nil
 }
 
-func buildSummary(svc *all.Services, txns []models.Transaction) (gqtypes.SummaryGroups, error) {
+func BuildSummary(svc *all.Services, txns []models.Transaction) (gqtypes.SummaryGroups, error) {
 	summary := gqtypes.SummaryGroups{
 		Type:        map[string]gqtypes.FieldCost{},
 		Category:    map[string]gqtypes.FieldCost{},
@@ -174,16 +184,16 @@ func buildSummary(svc *all.Services, txns []models.Transaction) (gqtypes.Summary
 	return summary, nil
 }
 
-func categoryKeyFn(txn models.Transaction) string {
+func CategoryKeyFn(txn models.Transaction) string {
 	return strings.Split(txn.SubcategoryID, "-")[0]
 }
 
-func subcategoryKeyFn(txn models.Transaction) string {
+func SubcategoryKeyFn(txn models.Transaction) string {
 	return txn.SubcategoryID
 }
 
-// buildTypeSeparatedSummary aggregates by key+type, resolves names, and returns sorted slice.
-func buildTypeSeparatedSummary(
+// BuildTypeSeparatedSummary aggregates by key+type, resolves names, and returns sorted slice.
+func BuildTypeSeparatedSummary(
 	svc *all.Services,
 	txns []models.Transaction,
 	keyFn func(models.Transaction) string,
@@ -220,7 +230,7 @@ func buildTypeSeparatedSummary(
 	return result, nil
 }
 
-func computeTotals(txns []models.Transaction) (totalAmount, netBalance float64) {
+func ComputeTotals(txns []models.Transaction) (totalAmount, netBalance float64) {
 	for _, txn := range txns {
 		totalAmount += txn.Amount
 		switch txn.Type {
@@ -233,7 +243,7 @@ func computeTotals(txns []models.Transaction) (totalAmount, netBalance float64) 
 	return totalAmount, netBalance
 }
 
-func calculateStartTime(duration SummaryDuration) time.Time {
+func CalculateStartTime(duration SummaryDuration) time.Time {
 	now, startTime := time.Now(), pkg.StartOfMonth()
 	switch duration {
 	case DurationOneWeek:
@@ -252,7 +262,7 @@ func calculateStartTime(duration SummaryDuration) time.Time {
 	return startTime
 }
 
-func generateTransactionReportFromTemplate(report gqtypes.Report) (string, error) {
+func GenerateTransactionReportFromTemplate(report gqtypes.Report, title string) (string, error) {
 	converter := string(configs.TrackerConfig.System.PDFGenerator)
 
 	funcMap := template.FuncMap{
@@ -283,7 +293,7 @@ func generateTransactionReportFromTemplate(report gqtypes.Report) (string, error
 	}
 	pdfFile.Close()
 
-	if err = pkg.ConvertHTMLToPDF(converter, pdfFile.Name(), bodyBytes, headerBytes, footerBytes); err != nil {
+	if err = pkg.ConvertHTMLToPDF(converter, pdfFile.Name(), bodyBytes, headerBytes, footerBytes, title); err != nil {
 		os.Remove(pdfFile.Name())
 		return "", err
 	}

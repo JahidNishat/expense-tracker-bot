@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
 	authmod "github.com/masudur-rahman/expense-tracker-bot/modules/auth"
 )
 
@@ -18,12 +19,14 @@ func JWTAuth(jwtSecret string) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token := extractBearerToken(r)
 			if token == "" {
+				logr.DefaultLogger.Warnw("auth_failed", "path", r.URL.Path, "reason", "missing_token")
 				WriteError(w, http.StatusUnauthorized, "missing_token", "authorization header required")
 				return
 			}
 
 			claims, err := authmod.ParseAccessToken(token, jwtSecret)
 			if err != nil {
+				logr.DefaultLogger.Warnw("auth_failed", "path", r.URL.Path, "reason", "invalid_token", "error", err.Error())
 				WriteError(w, http.StatusUnauthorized, "invalid_token", "invalid or expired token")
 				return
 			}

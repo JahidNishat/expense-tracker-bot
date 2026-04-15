@@ -59,7 +59,20 @@ func HandleListTransactions(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusInternalServerError, "list_failed", err.Error())
 		return
 	}
-	WriteJSON(w, http.StatusOK, txns)
+	if txns == nil {
+		txns = []models.Transaction{}
+	}
+
+	// For now, return all since service doesn't support pagination yet
+	// but wrap in the expected response format
+	WriteJSON(w, http.StatusOK, map[string]any{
+		"data": txns,
+		"pagination": map[string]any{
+			"page":  1,
+			"limit": len(txns),
+			"total": len(txns),
+		},
+	})
 }
 
 // HandleCreateTransaction handles POST /transactions.
