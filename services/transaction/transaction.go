@@ -1,6 +1,7 @@
 package transaction
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -42,7 +43,7 @@ func (ts *txnService) AddTransaction(txn models.Transaction) (err error) {
 		txn.CreatedAt = time.Now().Unix()
 	}
 
-	uow, err := ts.uow.Begin()
+	uow, err := ts.uow.Begin(context.Background())
 	if err != nil {
 		return err
 	}
@@ -113,7 +114,7 @@ func (ts *txnService) UpdateTransaction(userID, txnID int64, updated models.Tran
 		return err
 	}
 
-	uow, err := ts.uow.Begin()
+	uow, err := ts.uow.Begin(context.Background())
 	if err != nil {
 		return err
 	}
@@ -147,7 +148,7 @@ func (ts *txnService) DeleteTransaction(userID, txnID int64) (err error) {
 		return err
 	}
 
-	uow, err := ts.uow.Begin()
+	uow, err := ts.uow.Begin(context.Background())
 	if err != nil {
 		return err
 	}
@@ -174,7 +175,7 @@ func (ts *txnService) Undo(userID int64) (txn *models.Transaction, err error) {
 		return nil, fmt.Errorf("nothing to undo: %w", err)
 	}
 
-	uow, err := ts.uow.Begin()
+	uow, err := ts.uow.Begin(context.Background())
 	if err != nil {
 		return nil, err
 	}

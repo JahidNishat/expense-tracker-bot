@@ -22,8 +22,8 @@ func setupBudgetRepo(t *testing.T) *SQLBudgetRepository {
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = conn.Close() })
 
-	db := sqlite.NewSQLite(context.Background(), conn)
-	require.NoError(t, db.Sync(models.Budget{}))
+	db := sqlite.NewSQLite(conn)
+	require.NoError(t, db.Sync(context.Background(), models.Budget{}))
 
 	logger := zap.NewNop().Sugar()
 	return NewSQLBudgetRepository(db, logger)

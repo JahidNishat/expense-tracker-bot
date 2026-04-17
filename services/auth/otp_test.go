@@ -25,7 +25,7 @@ func newTestAuthService(
 		messenger:     messenger,
 		jwtSecret:     "test-jwt-secret",
 		refreshSecret: "test-refresh-secret",
-		botUsername:    "testbot",
+		botUsername:   "testbot",
 		baseURL:       "https://example.com",
 		logger:        zap.NewNop().Sugar(),
 	}

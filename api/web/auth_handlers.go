@@ -3,11 +3,15 @@ package web
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/masudur-rahman/expense-tracker-bot/configs"
 	"github.com/masudur-rahman/expense-tracker-bot/services/all"
 )
+
+// sessionIDPattern matches UUID-like session identifiers (alphanumeric + hyphens).
+var sessionIDPattern = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 // 7 days in seconds.
 const refreshCookieMaxAge = 7 * 24 * 60 * 60
@@ -100,8 +104,8 @@ func HandleQRInit(w http.ResponseWriter, r *http.Request) {
 // HandleQRRedirect handles GET /auth/qr/redirect?session=<id>.
 func HandleQRRedirect(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.URL.Query().Get("session")
-	if sessionID == "" {
-		http.Error(w, "missing session param", http.StatusBadRequest)
+	if sessionID == "" || !sessionIDPattern.MatchString(sessionID) {
+		http.Error(w, "missing or invalid session param", http.StatusBadRequest)
 		return
 	}
 
@@ -113,7 +117,7 @@ func HandleQRRedirect(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(httpLink, "<==>", tgLink)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprintf(w, qrRedirectPage, tgLink, httpLink, httpLink)
+	fmt.Fprintf(w, qrRedirectPage, tgLink, httpLink, httpLink) //nolint:gosec // sessionID validated against alphanumeric pattern; botUsername comes from config
 }
 
 const qrRedirectPage = `<!DOCTYPE html>

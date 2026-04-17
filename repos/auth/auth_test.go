@@ -29,8 +29,8 @@ func setupAuthRepo(t *testing.T) testEnv {
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = conn.Close() })
 
-	db := sqlite.NewSQLite(context.Background(), conn)
-	require.NoError(t, db.Sync(models.RefreshToken{}))
+	db := sqlite.NewSQLite(conn)
+	require.NoError(t, db.Sync(context.Background(), models.RefreshToken{}))
 
 	logger := zap.NewNop().Sugar()
 	repo := NewSQLAuthRepository(db, logger).(*sqlAuthRepo)

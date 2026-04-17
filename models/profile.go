@@ -7,8 +7,8 @@ type Contacts struct {
 	FullName         string  `json:"fullName"`
 	Email            string  `db:"email,uqs" json:"email"`
 	ContactInfo      string  `json:"contactInfo"`
-	NetBalance       float64 `json:"netBalance"`
-	LastTxnTimestamp int64   `json:"lastTxnTimestamp"`
+	NetBalance       float64 `db:"net_balance" json:"netBalance"`
+	LastTxnTimestamp int64   `db:"last_txn_timestamp" json:"lastTxnTimestamp"`
 }
 
 func (Contacts) TableName() string {

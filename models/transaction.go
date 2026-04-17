@@ -42,8 +42,8 @@ type Transaction struct {
 	Timestamp     int64           `json:"timestamp"`
 	Remarks       string          `json:"remarks"`
 
-	DeletedAt int64 `db:"deleted_at" json:"deletedAt"` // 0 = active; non-zero = unix timestamp of soft-delete
-	CreatedAt int64 `db:"created_at" json:"createdAt"` // unix timestamp of creation
+	DeletedAt int64 `db:"deleted_at,req" json:"deletedAt"` // 0 = active; non-zero = unix timestamp of soft-delete
+	CreatedAt int64 `db:"created_at" json:"createdAt"`     // unix timestamp of creation
 }
 
 func (Transaction) TableName() string {

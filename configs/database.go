@@ -68,13 +68,12 @@ func InitiateDatabaseConnection(ctx context.Context) error {
 	}
 }
 
-func getSQLiteDatabase(ctx context.Context) (isql.Engine, error) {
+func getSQLiteDatabase(_ context.Context) (isql.Engine, error) {
 	conn, err := lib.GetSQLiteConnection(google.DatabasePath())
 	if err != nil {
 		return nil, err
 	}
-
-	return sqlite.NewSQLite(ctx, conn), nil
+	return sqlite.NewSQLite(conn), nil
 }
 
 func initializeSQLServices(uow styx.UnitOfWork) error {
@@ -97,8 +96,9 @@ func initializeSQLServices(uow styx.UnitOfWork) error {
 	return all.GetServices().Txn.UpdateTxnCategories()
 }
 
-// fixNullZeroValues patches existing rows where styx v1.2.3 inserted NULL for zero-value fields.
+// fixNullZeroValues patches existing rows where styx v1.2.x inserted NULL for zero-value fields.
 func fixNullZeroValues(db isql.Engine) error {
+	ctx := context.Background()
 	stmts := []string{
 		`UPDATE "transaction" SET deleted_at = 0 WHERE deleted_at IS NULL`,
 		`UPDATE "wallet" SET version = 0 WHERE version IS NULL`,
@@ -108,18 +108,12 @@ func fixNullZeroValues(db isql.Engine) error {
 		`UPDATE "refresh_token" SET revoked = 0 WHERE revoked IS NULL`,
 	}
 	for _, stmt := range stmts {
-		if _, err := db.Exec(stmt); err != nil {
+		if _, err := db.Exec(ctx, stmt); err != nil {
 			return fmt.Errorf("fix null values: %w", err)
 		}
 	}
 	return nil
 }
-
-// pgPool holds the *sql.DB connection pool so we can re-acquire connections.
-var (
-	pgPool     *sql.DB
-	activeConn *sql.Conn
-)
 
 func getPostgresDatabase(ctx context.Context) (isql.Engine, error) {
 	parsePostgresConfig()
@@ -137,49 +131,19 @@ func getPostgresDatabase(ctx context.Context) (isql.Engine, error) {
 		return nil, fmt.Errorf("ping postgres: %w", err)
 	}
 
-	conn, err := pool.Conn(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("acquire initial conn: %w", err)
-	}
+	go pingPostgresDatabasePeriodically(logr.DefaultLogger)
 
-	pgPool = pool
-	activeConn = conn
-	go pingPostgresDatabasePeriodically(context.Background(), logr.DefaultLogger)
-
-	return postgres.NewPostgres(ctx, conn).ShowSQL(true), nil
+	return postgres.NewPostgres(pool).ShowSQL(true), nil
 }
 
-func pingPostgresDatabasePeriodically(ctx context.Context, logger logr.Logger) {
+// pingPostgresDatabasePeriodically logs Postgres health. *sql.DB handles reconnections automatically.
+func pingPostgresDatabasePeriodically(logger logr.Logger) {
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		if pgPool == nil {
-			continue
-		}
-
 		if err := PingDatabase(); err != nil {
-			logger.Warnw("Postgres connection lost, attempting to re-acquire...", "error", err.Error())
-
-			conn, connErr := pgPool.Conn(ctx)
-			if connErr != nil {
-				logger.Errorw("Critical: Failed to acquire fresh connection from pool", "error", connErr.Error())
-				continue
-			}
-
-			if activeConn != nil {
-				_ = activeConn.Close()
-			}
-
-			activeConn = conn
-			newEngine := postgres.NewPostgres(ctx, conn).ShowSQL(true)
-
-			dbMu.Lock()
-			sqlDB = newEngine
-			dbMu.Unlock()
-
-			all.InitiateSQLServices(styx.UnitOfWork{SQL: &safeEngine{engine: newEngine, mu: &dbMu}}, logger)
-			logger.Infow("Successfully re-established Postgres connection")
+			logger.Warnw("Postgres health check failed", "error", err.Error())
 		}
 	}
 }
@@ -213,6 +177,7 @@ func parsePostgresConfig() {
 
 func syncTables(db isql.Engine) error {
 	return db.Sync(
+		context.Background(),
 		models.Profile{},
 		models.Contacts{},
 		models.Wallet{},
@@ -232,8 +197,9 @@ func LoadAICacheIntoMemory() {
 		return
 	}
 
+	ctx := context.Background()
 	var rows []models.AICache
-	if err := GetUnitOfWork().SQL.Table(models.AICache{}.TableName()).FindMany(&rows); err != nil {
+	if err := GetUnitOfWork().SQL.Table(models.AICache{}.TableName()).FindMany(ctx, &rows); err != nil {
 		logr.DefaultLogger.Errorw("Failed to load AI cache", "error", err.Error())
 		return
 	}
@@ -250,7 +216,7 @@ func PingDatabase() error {
 	if sqlDB == nil {
 		return fmt.Errorf("database not initialized")
 	}
-	_, err := sqlDB.Exec("SELECT 1")
+	_, err := sqlDB.Exec(context.Background(), "SELECT 1")
 	return err
 }
 
@@ -259,7 +225,7 @@ func InsertAICache(entry models.AICache) error {
 	if sqlDB == nil {
 		return fmt.Errorf("database not initialized")
 	}
-	_, err := GetUnitOfWork().SQL.Table(models.AICache{}.TableName()).InsertOne(entry)
+	_, err := GetUnitOfWork().SQL.Table(models.AICache{}.TableName()).InsertOne(context.Background(), entry)
 	return err
 }
 
@@ -269,10 +235,12 @@ type safeEngine struct {
 	mu     *sync.Mutex
 }
 
-func (s *safeEngine) BeginTx() (isql.Engine, error) {
+// Transaction control
+
+func (s *safeEngine) BeginTx(ctx context.Context) (isql.Engine, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	engine, err := s.engine.BeginTx()
+	engine, err := s.engine.BeginTx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -290,6 +258,8 @@ func (s *safeEngine) Rollback() error {
 	defer s.mu.Unlock()
 	return s.engine.Rollback()
 }
+
+// Fluent builder methods — no mutex, these build query state only.
 
 func (s *safeEngine) Table(name string) isql.Engine {
 	return &safeEngine{engine: s.engine.Table(name), mu: s.mu}
@@ -319,62 +289,178 @@ func (s *safeEngine) MustCols(cols ...string) isql.Engine {
 	return &safeEngine{engine: s.engine.MustCols(cols...), mu: s.mu}
 }
 
+func (s *safeEngine) MustFilterCols(cols ...string) isql.Engine {
+	return &safeEngine{engine: s.engine.MustFilterCols(cols...), mu: s.mu}
+}
+
 func (s *safeEngine) ShowSQL(showSQL bool) isql.Engine {
 	return &safeEngine{engine: s.engine.ShowSQL(showSQL), mu: s.mu}
 }
 
-func (s *safeEngine) FindOne(document any, filter ...any) (bool, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.engine.FindOne(document, filter...)
+func (s *safeEngine) OrderBy(col string, direction ...string) isql.Engine {
+	return &safeEngine{engine: s.engine.OrderBy(col, direction...), mu: s.mu}
 }
 
-func (s *safeEngine) FindMany(documents any, filter ...any) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.engine.FindMany(documents, filter...)
+func (s *safeEngine) Limit(n int64) isql.Engine {
+	return &safeEngine{engine: s.engine.Limit(n), mu: s.mu}
 }
 
-func (s *safeEngine) InsertOne(document any) (any, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.engine.InsertOne(document)
+func (s *safeEngine) Offset(n int64) isql.Engine {
+	return &safeEngine{engine: s.engine.Offset(n), mu: s.mu}
 }
 
-func (s *safeEngine) InsertMany(documents []any) ([]any, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.engine.InsertMany(documents)
+func (s *safeEngine) Distinct() isql.Engine {
+	return &safeEngine{engine: s.engine.Distinct(), mu: s.mu}
 }
 
-func (s *safeEngine) UpdateOne(document any) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.engine.UpdateOne(document)
+func (s *safeEngine) GroupBy(cols ...string) isql.Engine {
+	return &safeEngine{engine: s.engine.GroupBy(cols...), mu: s.mu}
 }
 
-func (s *safeEngine) DeleteOne(filter ...any) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.engine.DeleteOne(filter...)
+func (s *safeEngine) Having(cond string, args ...any) isql.Engine {
+	return &safeEngine{engine: s.engine.Having(cond, args...), mu: s.mu}
 }
 
-func (s *safeEngine) Query(query string, args ...any) (*sql.Rows, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.engine.Query(query, args...)
+func (s *safeEngine) Or(cond string, args ...any) isql.Engine {
+	return &safeEngine{engine: s.engine.Or(cond, args...), mu: s.mu}
 }
 
-func (s *safeEngine) Exec(query string, args ...any) (sql.Result, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.engine.Exec(query, args...)
+func (s *safeEngine) Like(col, pattern string) isql.Engine {
+	return &safeEngine{engine: s.engine.Like(col, pattern), mu: s.mu}
 }
 
-func (s *safeEngine) Sync(tables ...any) error {
+func (s *safeEngine) NotLike(col, pattern string) isql.Engine {
+	return &safeEngine{engine: s.engine.NotLike(col, pattern), mu: s.mu}
+}
+
+func (s *safeEngine) Exists(subquery string, args ...any) isql.Engine {
+	return &safeEngine{engine: s.engine.Exists(subquery, args...), mu: s.mu}
+}
+
+func (s *safeEngine) NotExists(subquery string, args ...any) isql.Engine {
+	return &safeEngine{engine: s.engine.NotExists(subquery, args...), mu: s.mu}
+}
+
+func (s *safeEngine) Count(col string, alias ...string) isql.Engine {
+	return &safeEngine{engine: s.engine.Count(col, alias...), mu: s.mu}
+}
+
+func (s *safeEngine) Sum(col string, alias ...string) isql.Engine {
+	return &safeEngine{engine: s.engine.Sum(col, alias...), mu: s.mu}
+}
+
+func (s *safeEngine) Avg(col string, alias ...string) isql.Engine {
+	return &safeEngine{engine: s.engine.Avg(col, alias...), mu: s.mu}
+}
+
+func (s *safeEngine) Min(col string, alias ...string) isql.Engine {
+	return &safeEngine{engine: s.engine.Min(col, alias...), mu: s.mu}
+}
+
+func (s *safeEngine) Max(col string, alias ...string) isql.Engine {
+	return &safeEngine{engine: s.engine.Max(col, alias...), mu: s.mu}
+}
+
+func (s *safeEngine) Paginate(page, perPage int64) isql.Engine {
+	return &safeEngine{engine: s.engine.Paginate(page, perPage), mu: s.mu}
+}
+
+func (s *safeEngine) Join(table, condition string) isql.Engine {
+	return &safeEngine{engine: s.engine.Join(table, condition), mu: s.mu}
+}
+
+func (s *safeEngine) LeftJoin(table, condition string) isql.Engine {
+	return &safeEngine{engine: s.engine.LeftJoin(table, condition), mu: s.mu}
+}
+
+func (s *safeEngine) RightJoin(table, condition string) isql.Engine {
+	return &safeEngine{engine: s.engine.RightJoin(table, condition), mu: s.mu}
+}
+
+func (s *safeEngine) InnerJoin(table, condition string) isql.Engine {
+	return &safeEngine{engine: s.engine.InnerJoin(table, condition), mu: s.mu}
+}
+
+func (s *safeEngine) WithDeleted() isql.Engine {
+	return &safeEngine{engine: s.engine.WithDeleted(), mu: s.mu}
+}
+
+func (s *safeEngine) EnableValidation(enable bool) isql.Engine {
+	return &safeEngine{engine: s.engine.EnableValidation(enable), mu: s.mu}
+}
+
+// Execution methods — mutex required.
+
+func (s *safeEngine) FindOne(ctx context.Context, document any, filter ...any) (bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.engine.Sync(tables...)
+	return s.engine.FindOne(ctx, document, filter...)
+}
+
+func (s *safeEngine) FindMany(ctx context.Context, documents any, filter ...any) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.engine.FindMany(ctx, documents, filter...)
+}
+
+func (s *safeEngine) InsertOne(ctx context.Context, document any) (any, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.engine.InsertOne(ctx, document)
+}
+
+func (s *safeEngine) InsertMany(ctx context.Context, documents []any) ([]any, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.engine.InsertMany(ctx, documents)
+}
+
+func (s *safeEngine) UpdateOne(ctx context.Context, document any) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.engine.UpdateOne(ctx, document)
+}
+
+func (s *safeEngine) DeleteOne(ctx context.Context, filter ...any) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.engine.DeleteOne(ctx, filter...)
+}
+
+func (s *safeEngine) ForceDelete(ctx context.Context, filter ...any) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.engine.ForceDelete(ctx, filter...)
+}
+
+func (s *safeEngine) Restore(ctx context.Context, filter ...any) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.engine.Restore(ctx, filter...)
+}
+
+func (s *safeEngine) Query(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.engine.Query(ctx, query, args...)
+}
+
+func (s *safeEngine) Exec(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.engine.Exec(ctx, query, args...)
+}
+
+func (s *safeEngine) Sync(ctx context.Context, tables ...any) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.engine.Sync(ctx, tables...)
+}
+
+func (s *safeEngine) DropTable(ctx context.Context, name string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.engine.DropTable(ctx, name)
 }
 
 func (s *safeEngine) Close() error {

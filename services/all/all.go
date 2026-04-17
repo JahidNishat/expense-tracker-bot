@@ -45,7 +45,7 @@ type webConfig struct {
 	messenger     authmod.Messenger
 	jwtSecret     string
 	refreshSecret string
-	botUsername    string
+	botUsername   string
 	baseURL       string
 }
 
@@ -119,7 +119,7 @@ func InitiateWebServices(
 		messenger:     messenger,
 		jwtSecret:     jwtSecret,
 		refreshSecret: refreshSecret,
-		botUsername:    botUsername,
+		botUsername:   botUsername,
 		baseURL:       baseURL,
 	}
 

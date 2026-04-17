@@ -18,9 +18,9 @@ type Wallet struct {
 	Type             WalletType `json:"type"`
 	ShortName        string     `db:",uqs" json:"shortName"`
 	Name             string     `json:"name"`
-	Balance          float64    `json:"balance"`
-	LastTxnAmount    float64    `json:"lastTxnAmount"`
-	LastTxnTimestamp int64      `json:"lastTxnTimestamp"`
+	Balance          float64    `db:"balance" json:"balance"`
+	LastTxnAmount    float64    `db:"last_txn_amount" json:"lastTxnAmount"`
+	LastTxnTimestamp int64      `db:"last_txn_timestamp" json:"lastTxnTimestamp"`
 	Version          int64      `db:"version" json:"version"`
 }
 

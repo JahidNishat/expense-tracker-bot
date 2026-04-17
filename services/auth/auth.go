@@ -32,7 +32,7 @@ type authService struct {
 	messenger     authmod.Messenger
 	jwtSecret     string
 	refreshSecret string
-	botUsername    string
+	botUsername   string
 	baseURL       string
 	logger        logr.Logger
 	refreshMu     sync.Mutex
@@ -52,7 +52,7 @@ func NewAuthService(
 		messenger:     messenger,
 		jwtSecret:     jwtSecret,
 		refreshSecret: refreshSecret,
-		botUsername:    botUsername,
+		botUsername:   botUsername,
 		baseURL:       strings.TrimRight(baseURL, "/"),
 		logger:        logger,
 	}
