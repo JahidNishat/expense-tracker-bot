@@ -70,7 +70,7 @@ func handleReportCallback(ctx telebot.Context, callbackOpts CallbackOptions) err
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	pdfFile, err := GenerateTransactionReportFromTemplate(report, "")
+	pdfFile, err := GenerateTransactionStatementFromTemplate(report, "")
 	if err != nil {
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
@@ -110,6 +110,23 @@ func generateReport(ctx telebot.Context, rop ReportCallbackOptions) (gqtypes.Rep
 		StartDate: startTime,
 		EndDate:   now,
 	}
+
+	wallets, err := svc.Wallet.ListWallets(user.ID)
+	if err == nil {
+		report.Wallets = make([]gqtypes.Wallet, 0, len(wallets))
+		for _, w := range wallets {
+			report.Wallets = append(report.Wallets, convert.ToWalletAPIFormat(w))
+		}
+	}
+
+	contacts, err := svc.Contact.ListContacts(user.ID)
+	if err == nil {
+		report.Contacts = make([]gqtypes.Contact, 0, len(contacts))
+		for _, c := range contacts {
+			report.Contacts = append(report.Contacts, convert.ToContactAPIFormat(c))
+		}
+	}
+
 	txnApis := make([]gqtypes.Transaction, 0, len(txns))
 	for _, txn := range txns {
 		txnApis = append(txnApis, convert.ToTransactionAPIFormat(txn))
@@ -168,7 +185,7 @@ func BuildSummary(svc *all.Services, txns []models.Transaction) (gqtypes.Summary
 	for k, fc := range summary.Category {
 		fc.Name, err = svc.Txn.GetTxnCategoryName(k)
 		if err != nil {
-			return gqtypes.SummaryGroups{}, err
+			fc.Name = k // fallback to ID
 		}
 		summary.Category[k] = fc
 	}
@@ -176,7 +193,7 @@ func BuildSummary(svc *all.Services, txns []models.Transaction) (gqtypes.Summary
 	for k, fc := range summary.Subcategory {
 		fc.Name, err = svc.Txn.GetTxnSubcategoryName(k)
 		if err != nil {
-			return gqtypes.SummaryGroups{}, err
+			fc.Name = k // fallback to ID
 		}
 		summary.Subcategory[k] = fc
 	}
@@ -214,7 +231,7 @@ func BuildTypeSeparatedSummary(
 	for ck, amount := range agg {
 		name, err := nameFn(ck.key)
 		if err != nil {
-			return nil, err
+			name = ck.key // fallback to ID
 		}
 		result = append(result, gqtypes.FieldCost{
 			Name:   name,
@@ -262,12 +279,13 @@ func CalculateStartTime(duration SummaryDuration) time.Time {
 	return startTime
 }
 
-func GenerateTransactionReportFromTemplate(report gqtypes.Report, title string) (string, error) {
+func GenerateTransactionStatementFromTemplate(report gqtypes.Report, title string) (string, error) {
 	converter := string(configs.TrackerConfig.System.PDFGenerator)
 
 	funcMap := template.FuncMap{
-		"formatBDT": FormatBDT,
-		"toLower":   strings.ToLower,
+		"formatBDT":    FormatBDT,
+		"toLower":      strings.ToLower,
+		"balanceClass": BalanceClass,
 	}
 
 	bodyBytes, err := executeTemplate("transaction_report.tmpl", funcMap, &report)
@@ -392,4 +410,14 @@ func reverseString(s string) string {
 		runes[i], runes[j] = runes[j], runes[i]
 	}
 	return string(runes)
+}
+
+func BalanceClass(amount float64) string {
+	if amount > 0 {
+		return "income"
+	}
+	if amount < 0 {
+		return "expense"
+	}
+	return ""
 }

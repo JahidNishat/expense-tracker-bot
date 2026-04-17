@@ -23,6 +23,7 @@ const (
 
 	qrStatusPending  = "pending"
 	qrStatusApproved = "approved"
+	qrStatusDenied   = "denied"
 )
 
 type authService struct {
@@ -141,6 +142,26 @@ func (s *authService) ConfirmQRSession(sessionID string, telegramID int64) error
 	return cache.SetCache(qrKey(sessionID), string(data), qrTTL)
 }
 
+func (s *authService) DenyQRSession(sessionID string) error {
+	raw, ok := cache.GetCache(qrKey(sessionID))
+	if !ok {
+		return models.StatusError{Status: 400, Message: "qr session expired"}
+	}
+
+	var session qrSession
+	if err := json.Unmarshal([]byte(raw), &session); err != nil {
+		return fmt.Errorf("parse qr session: %w", err)
+	}
+
+	if session.Status != qrStatusPending {
+		return models.StatusError{Status: 400, Message: "qr session already used"}
+	}
+
+	session.Status = qrStatusDenied
+	data, _ := json.Marshal(session)
+	return cache.SetCache(qrKey(sessionID), string(data), qrTTL)
+}
+
 func (s *authService) PollQRSession(sessionID string) (*authmod.TokenPair, string, error) {
 	raw, ok := cache.GetCache(qrKey(sessionID))
 	if !ok {
@@ -156,6 +177,10 @@ func (s *authService) PollQRSession(sessionID string) (*authmod.TokenPair, strin
 		return nil, qrStatusPending, nil
 	}
 
+	if session.Status == qrStatusDenied {
+		return nil, qrStatusDenied, nil
+	}
+
 	user, err := s.userRepo.GetUserByID(session.UserID)
 	if err != nil {
 		return nil, "", err
@@ -166,6 +191,34 @@ func (s *authService) PollQRSession(sessionID string) (*authmod.TokenPair, strin
 		return nil, "", err
 	}
 	return pair, qrStatusApproved, nil
+}
+
+func (s *authService) CreateMagicLink(userID int64) (string, error) {
+	token := strings.ReplaceAll(uuid.New().String(), "-", "")
+	if err := cache.SetCache(magicKey(token), fmt.Sprintf("%d", userID), 5*time.Minute); err != nil {
+		return "", fmt.Errorf("cache magic link: %w", err)
+	}
+	return token, nil
+}
+
+func (s *authService) VerifyMagicLink(token string) (*authmod.TokenPair, error) {
+	raw, ok := cache.GetCache(magicKey(token))
+	if !ok {
+		return nil, models.StatusError{Status: 400, Message: "magic link expired or invalid"}
+	}
+	_ = cache.DeleteCache(magicKey(token))
+
+	var userID int64
+	if _, err := fmt.Sscanf(raw, "%d", &userID); err != nil {
+		return nil, fmt.Errorf("parse userID from cache: %w", err)
+	}
+
+	user, err := s.userRepo.GetUserByID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.issueTokenPair(user)
 }
 
 func (s *authService) RefreshTokens(refreshToken string) (*authmod.TokenPair, error) {

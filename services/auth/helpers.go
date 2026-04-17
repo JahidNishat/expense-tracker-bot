@@ -22,6 +22,8 @@ func otpKey(userID int64) string { return fmt.Sprintf("otp:%d", userID) }
 
 func qrKey(sessionID string) string { return fmt.Sprintf("qr:%s", sessionID) }
 
+func magicKey(token string) string { return fmt.Sprintf("magic:%s", token) }
+
 func (s *authService) lookupUser(identifier string) (*models.Profile, error) {
 	user, err := s.userRepo.GetUser(models.Profile{Username: identifier})
 	if err == nil {

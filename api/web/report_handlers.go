@@ -46,6 +46,23 @@ func HandleGetReport(w http.ResponseWriter, r *http.Request) {
 		StartDate: startTime,
 		EndDate:   now,
 	}
+
+	wallets, err := svc.Wallet.ListWallets(user.ID)
+	if err == nil {
+		report.Wallets = make([]gqtypes.Wallet, 0, len(wallets))
+		for _, w := range wallets {
+			report.Wallets = append(report.Wallets, convert.ToWalletAPIFormat(w))
+		}
+	}
+
+	contacts, err := svc.Contact.ListContacts(user.ID)
+	if err == nil {
+		report.Contacts = make([]gqtypes.Contact, 0, len(contacts))
+		for _, c := range contacts {
+			report.Contacts = append(report.Contacts, convert.ToContactAPIFormat(c))
+		}
+	}
+
 	txnApis := make([]gqtypes.Transaction, 0, len(txns))
 	for _, txn := range txns {
 		txnApis = append(txnApis, convert.ToTransactionAPIFormat(txn))
@@ -73,7 +90,7 @@ func HandleGetReport(w http.ResponseWriter, r *http.Request) {
 
 	report.TotalAmount, report.NetBalance = handlers.ComputeTotals(txns)
 
-	pdfFile, err := handlers.GenerateTransactionReportFromTemplate(report, "")
+	pdfFile, err := handlers.GenerateTransactionStatementFromTemplate(report, "")
 	if err != nil {
 		WriteError(w, http.StatusInternalServerError, "pdf_failed", err.Error())
 		return
@@ -81,6 +98,6 @@ func HandleGetReport(w http.ResponseWriter, r *http.Request) {
 	defer os.Remove(pdfFile)
 
 	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"financial_transaction_report_%s.pdf\"", duration))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=\"financial_statement_%s.pdf\"", duration))
 	http.ServeFile(w, r, pdfFile)
 }

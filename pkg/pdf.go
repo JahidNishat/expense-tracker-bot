@@ -13,7 +13,7 @@ import (
 // ConvertHTMLToPDF converts HTML content to PDF using the specified generator.
 func ConvertHTMLToPDF(generator string, outputFile string, data, header, footer []byte, title string) error {
 	if title == "" {
-		title = "Financial Transaction Report"
+		title = "Financial Transaction Statement"
 	}
 	switch generator {
 	case "chromedp":

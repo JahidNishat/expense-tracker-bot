@@ -45,6 +45,10 @@ func HandleQRCallback(ctx telebot.Context) error {
 		return ctx.Edit("✅ Dashboard login approved. You can return to your browser.")
 
 	case strings.HasPrefix(data, qrDenyPrefix):
+		sessionID := strings.TrimPrefix(data, qrDenyPrefix)
+		if err := authSvc.DenyQRSession(sessionID); err != nil {
+			return ctx.Edit("❌ Failed to deny login: " + err.Error())
+		}
 		return ctx.Edit("🚫 Login denied.")
 
 	default:

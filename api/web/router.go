@@ -18,12 +18,15 @@ func NewRouter(jwtSecret, corsOrigin string) chi.Router {
 	r.Use(middleware.Recoverer)
 	r.Use(corsMiddleware(corsOrigin))
 
+	r.Get("/healthz", HandleHealthz)
+
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Post("/auth/request-otp", HandleRequestOTP)
 		r.Post("/auth/verify-otp", HandleVerifyOTP)
 		r.Post("/auth/qr/init", HandleQRInit)
 		r.Get("/auth/qr/status", HandleQRPoll)
 		r.Get("/auth/qr/redirect", HandleQRRedirect)
+		r.Post("/auth/magic-link", HandleVerifyMagicLink)
 		r.Post("/auth/refresh", HandleRefresh)
 		r.Post("/auth/logout", HandleLogout)
 

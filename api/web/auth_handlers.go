@@ -41,6 +41,10 @@ type qrStatusResponse struct {
 	RefreshToken string `json:"refreshToken,omitempty"`
 }
 
+type magicLinkRequest struct {
+	Token string `json:"token"`
+}
+
 // HandleRequestOTP handles POST /auth/request-otp.
 func HandleRequestOTP(w http.ResponseWriter, r *http.Request) {
 	var req otpRequest
@@ -191,4 +195,26 @@ func HandleLogout(w http.ResponseWriter, r *http.Request) {
 	}
 	ClearRefreshCookie(w)
 	WriteJSON(w, http.StatusOK, map[string]string{"message": "logged out"})
+}
+
+// HandleVerifyMagicLink handles POST /auth/magic-link.
+func HandleVerifyMagicLink(w http.ResponseWriter, r *http.Request) {
+	var req magicLinkRequest
+	if err := ReadJSON(r, &req); err != nil {
+		WriteError(w, http.StatusBadRequest, "bad_request", "invalid request body")
+		return
+	}
+	if req.Token == "" {
+		WriteError(w, http.StatusBadRequest, "bad_request", "token is required")
+		return
+	}
+
+	pair, err := all.GetServices().Auth.VerifyMagicLink(req.Token)
+	if err != nil {
+		WriteError(w, http.StatusUnauthorized, "verify_failed", err.Error())
+		return
+	}
+
+	SetRefreshCookie(w, pair.RefreshToken, refreshCookieMaxAge)
+	WriteJSON(w, http.StatusOK, tokenResponse{AccessToken: pair.AccessToken, RefreshToken: pair.RefreshToken})
 }

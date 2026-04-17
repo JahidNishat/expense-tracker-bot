@@ -27,8 +27,10 @@ type WebDashboardConfig struct {
 	RefreshSecret string `json:"refreshSecret" yaml:"refreshSecret"`
 	BotUsername   string `json:"botUsername" yaml:"botUsername"`
 	CORSOrigin    string `json:"corsOrigin" yaml:"corsOrigin"`
+	Host          string `json:"host" yaml:"host"`
 	Port          string `json:"port" yaml:"port"`
 	BaseURL       string `json:"baseURL" yaml:"baseURL"`
+	DashboardURL  string `json:"dashboardURL" yaml:"dashboardURL"`
 }
 
 type Telegram struct {
@@ -142,10 +144,22 @@ func (c *ExpenseConfiguration) OverrideWithEnv() {
 	if username := os.Getenv("WEB_BOT_USERNAME"); username != "" {
 		c.WebDashboard.BotUsername = username
 	}
+	if host := os.Getenv("WEB_HOST"); host != "" {
+		c.WebDashboard.Host = host
+	}
+	if c.WebDashboard.Host == "" {
+		c.WebDashboard.Host = "0.0.0.0"
+	}
 	if port := os.Getenv("WEB_PORT"); port != "" {
 		c.WebDashboard.Port = port
 	}
+	if c.WebDashboard.Port == "" {
+		c.WebDashboard.Port = "6336"
+	}
 	if baseURL := os.Getenv("WEB_BASE_URL"); baseURL != "" {
 		c.WebDashboard.BaseURL = baseURL
+	}
+	if dashboardURL := os.Getenv("WEB_DASHBOARD_URL"); dashboardURL != "" {
+		c.WebDashboard.DashboardURL = dashboardURL
 	}
 }
