@@ -95,9 +95,9 @@ export default function Settings() {
                 </div>
             </section>
 
-            <section className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-8 border-b border-gray-50 bg-gray-50/30">
-                    <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Contact & Preferences</h2>
+            <section className={`bg-white rounded-[2rem] shadow-sm border transition-all duration-200 ${isEditing ? 'border-blue-300 ring-2 ring-blue-50' : 'border-gray-100'} overflow-hidden`}>
+                <div className={`p-8 border-b transition-colors ${isEditing ? 'border-blue-100 bg-blue-50/30' : 'border-gray-50 bg-gray-50/30'}`}>
+                    <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Contact & Preferences {isEditing && <span className="text-blue-500 normal-case tracking-normal ml-2">— editing</span>}</h2>
                 </div>
                 <div className="p-8 space-y-8">
                     <div className="space-y-2">
@@ -109,7 +109,7 @@ export default function Settings() {
                             {isEditing ? (
                                 <input
                                     type="text"
-                                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-12 pr-4 py-4 text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none font-bold"
+                                    className="w-full bg-white border border-blue-200 rounded-2xl pl-12 pr-4 py-4 text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none font-bold"
                                     value={mobileNumber}
                                     onChange={e => setMobileNumber(e.target.value)}
                                     placeholder="e.g. +88017..."
@@ -130,7 +130,7 @@ export default function Settings() {
                             </div>
                             {isEditing ? (
                                 <select
-                                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-12 pr-4 py-4 text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none font-bold appearance-none cursor-pointer"
+                                    className="w-full bg-white border border-blue-200 rounded-2xl pl-12 pr-4 py-4 text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none font-bold appearance-none cursor-pointer"
                                     value={timezone}
                                     onChange={e => setTimezone(e.target.value)}
                                 >

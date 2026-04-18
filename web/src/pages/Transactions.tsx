@@ -64,11 +64,11 @@ export default function Transactions() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-gray-400 border-b border-gray-50 uppercase text-[10px] tracking-widest font-bold">
+                <th className="px-6 py-5">Date</th>
                 <th className="px-6 py-5">Type</th>
                 <th className="px-6 py-5">Category</th>
+                <th className="px-6 py-5 text-right">Amount</th>
                 <th className="px-6 py-5">Wallets / Contact</th>
-                <th className="px-6 py-5">Amount</th>
-                <th className="px-6 py-5">Date</th>
                 <th className="px-6 py-5">Remarks</th>
                 <th className="px-6 py-5 text-right">Actions</th>
               </tr>
@@ -78,17 +78,27 @@ export default function Transactions() {
                 <tr><td colSpan={7} className="p-20 text-center text-gray-400 font-medium">No transactions found</td></tr>
               ) : filtered.map(t => (
                 <tr key={t.id} className="hover:bg-gray-50/50 transition-colors group">
+                  <td className="px-6 py-4 text-gray-400 font-bold text-xs uppercase whitespace-nowrap">
+                    {new Date(t.timestamp * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${
-                        t.type === 'Income' ? 'bg-green-100 text-green-700' : 
-                        t.type === 'Transfer' ? 'bg-blue-100 text-blue-700' : 
+                        t.type === 'Income' ? 'bg-green-100 text-green-700' :
+                        t.type === 'Transfer' ? 'bg-blue-100 text-blue-700' :
                         'bg-red-100 text-red-700'
                     }`}>
                         {t.type}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="font-bold text-gray-900">{subcatMap.get(t.subcategoryId) || t.subcategoryId}</div>
+                    <div className="font-bold text-gray-900">{subcatMap.get(t.subcategoryId) || <span className="text-gray-400 italic">{t.subcategoryId}</span>}</div>
+                  </td>
+                  <td className={`px-6 py-4 font-bold text-base whitespace-nowrap text-right ${
+                    t.type === 'Income' ? 'text-green-600' :
+                    t.type === 'Transfer' ? 'text-blue-600' :
+                    'text-red-600'
+                  }`}>
+                    {t.type === 'Income' ? '+' : t.type === 'Transfer' ? '' : '-'}{fmt(t.amount)}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
@@ -96,16 +106,6 @@ export default function Transactions() {
                       <span className="text-gray-300">→</span>
                       <span className="bg-gray-100 px-1.5 py-0.5 rounded uppercase tracking-tighter font-bold">{t.dstId || t.contactName || '-'}</span>
                     </div>
-                  </td>
-                  <td className={`px-6 py-4 font-bold text-base whitespace-nowrap ${
-                    t.type === 'Income' ? 'text-green-600' : 
-                    t.type === 'Transfer' ? 'text-blue-600' : 
-                    'text-red-600'
-                  }`}>
-                    {t.type === 'Income' ? '+' : t.type === 'Transfer' ? '' : '-'}{fmt(t.amount)}
-                  </td>
-                  <td className="px-6 py-4 text-gray-400 font-bold text-xs uppercase">
-                    {new Date(t.timestamp * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                   </td>
                   <td className="px-6 py-4">
                     <p className="text-gray-500 text-xs truncate max-w-[120px] font-medium italic">{t.remarks || 'No remarks'}</p>

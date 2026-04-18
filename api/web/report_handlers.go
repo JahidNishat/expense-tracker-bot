@@ -97,7 +97,10 @@ func HandleGetReport(w http.ResponseWriter, r *http.Request) {
 	}
 	defer os.Remove(pdfFile)
 
+	startFmt := startTime.Format("Jan-2006")
+	endFmt := now.Format("Jan-2006")
+	filename := fmt.Sprintf("expense-statement-%s-to-%s.pdf", startFmt, endFmt)
 	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=\"financial_statement_%s.pdf\"", duration))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
 	http.ServeFile(w, r, pdfFile)
 }

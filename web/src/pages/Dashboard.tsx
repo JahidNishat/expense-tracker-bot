@@ -55,7 +55,13 @@ export default function Dashboard() {
             setIsDownloading(true)
             const blob = await downloadReport(duration)
             const url = window.URL.createObjectURL(blob as any)
-            window.open(url, '_blank')
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `expense-statement.pdf`
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            window.URL.revokeObjectURL(url)
             setShowReportModal(false)
         } catch (err) {
             alert('Failed to generate statement: ' + err)

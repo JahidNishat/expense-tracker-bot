@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, ArrowLeftRight, Wallet, Target, Settings } from 'lucide-react'
+import { LayoutDashboard, ArrowLeftRight, Wallet, Target, Settings, LogOut } from 'lucide-react'
+import { useAuth } from '../../hooks/useAuth'
 
 const links = [
   { to: '/', icon: LayoutDashboard, label: 'Home' },
@@ -10,6 +11,7 @@ const links = [
 ]
 
 export default function MobileNav() {
+  const { logout } = useAuth()
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2 z-50">
       {links.map(({ to, icon: Icon, label }) => (
@@ -24,6 +26,13 @@ export default function MobileNav() {
           {label}
         </NavLink>
       ))}
+      <button
+        onClick={logout}
+        className="flex flex-col items-center text-xs text-gray-500 hover:text-red-500 transition-colors cursor-pointer"
+      >
+        <LogOut size={20} />
+        Logout
+      </button>
     </nav>
   )
 }

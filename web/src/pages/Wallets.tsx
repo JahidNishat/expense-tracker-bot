@@ -69,7 +69,7 @@ export default function Wallets() {
           </div>
           <button
             onClick={() => setShowAddContact(true)}
-            className="flex items-center justify-center gap-2 bg-gray-900 text-white px-6 py-3 rounded-2xl text-sm font-bold hover:bg-black transition-all shadow-lg shadow-gray-200 group cursor-pointer"
+            className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-2xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 group cursor-pointer"
           >
             <Plus size={18} className="group-hover:rotate-90 transition-transform" />
             Add Contact
@@ -183,7 +183,7 @@ function AddContactDialog({ onClose }: { onClose: () => void }) {
         <div className="flex gap-3 justify-end pt-4">
           <button className="px-6 py-3 rounded-2xl text-sm font-bold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer" onClick={onClose}>Cancel</button>
           <button 
-            className="px-8 py-3 rounded-2xl text-sm font-bold bg-gray-900 text-white hover:bg-black transition-all shadow-lg shadow-gray-200 cursor-pointer" 
+            className="px-8 py-3 rounded-2xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 cursor-pointer" 
             onClick={handleSubmit}
             disabled={!nickName}
           >
