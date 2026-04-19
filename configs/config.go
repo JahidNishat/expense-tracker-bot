@@ -115,17 +115,27 @@ func (c *ExpenseConfiguration) OverrideWithEnv() {
 	}
 
 	// AI Configuration Overrides
-	if geminiKey := os.Getenv("GEMINI_API_KEY"); geminiKey != "" {
+	geminiKey, hasGemini := os.LookupEnv("GEMINI_API_KEY")
+	orKey, hasOpenRouter := os.LookupEnv("OPENROUTER_API_KEY")
+
+	if hasGemini {
 		c.System.GeminiKey = geminiKey
+	}
+	if hasOpenRouter {
+		c.System.OpenRouterKey = orKey
+	}
+
+	switch {
+	case hasGemini && hasOpenRouter:
 		if c.System.AIGenerator == "" {
 			c.System.AIGenerator = "gemini"
 		}
-	}
-	if orKey := os.Getenv("OPENROUTER_API_KEY"); orKey != "" {
-		c.System.OpenRouterKey = orKey
-		if c.System.AIGenerator == "" {
-			c.System.AIGenerator = "open-router"
-		}
+	case hasGemini:
+		c.System.AIGenerator = "gemini"
+	case hasOpenRouter:
+		c.System.AIGenerator = "open-router"
+	default:
+		c.System.AIGenerator = ""
 	}
 
 	// Web Dashboard Overrides

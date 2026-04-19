@@ -3,6 +3,7 @@ package configs
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"os"
 	"sync"
@@ -105,6 +106,7 @@ func fixNullZeroValues(db isql.Engine) error {
 		`UPDATE "contacts" SET net_balance = 0 WHERE net_balance IS NULL`,
 		`UPDATE "contacts" SET last_txn_timestamp = 0 WHERE last_txn_timestamp IS NULL`,
 		`UPDATE "budget" SET alert_at = 80 WHERE alert_at IS NULL`,
+		`UPDATE "ai_cache" SET intent = '' WHERE intent IS NULL`,
 		`UPDATE "refresh_token" SET revoked = 0 WHERE revoked IS NULL`,
 	}
 	for _, stmt := range stmts {
@@ -204,7 +206,12 @@ func LoadAICacheIntoMemory() {
 		return
 	}
 	for _, row := range rows {
-		_ = cache.SetCache(row.InputText, row.SubcategoryID, -1)
+		resultJSON, _ := json.Marshal(map[string]any{
+			"intent":         row.Intent,
+			"subcategory_id": row.SubcategoryID,
+			"confidence":     row.Confidence,
+		})
+		_ = cache.SetCache(row.InputText, string(resultJSON), -1)
 	}
 	logr.DefaultLogger.Infow("AI cache loaded from DB", "count", len(rows))
 }

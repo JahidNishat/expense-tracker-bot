@@ -198,7 +198,7 @@ var finSubs = []TxnSubcategory{
 	{ID: "fin-prof", Name: "Profit/Bonus", CatID: "fin", Hint: "bonus, profit share, freelance income, cashback"},
 	{ID: "fin-interest", Name: "Interest", CatID: "fin", Hint: "bank interest, savings interest, FDR interest"},
 	{ID: "fin-deposit", Name: "Deposit", CatID: "fin", Hint: "bank deposit, FDR, savings deposit"},
-	{ID: "fin-with", Name: "Withdraw", CatID: "fin", Hint: "ATM withdrawal, bank withdrawal, cash out"},
+	{ID: "fin-with", Name: "Withdraw", CatID: "fin", Hint: "ATM withdrawal, bank withdrawal, cash out, cashed out, withdrew cash"},
 	{ID: "fin-transfer", Name: "Acc Transfer", CatID: "fin", Hint: "bkash, nagad, rocket, bank-to-bank, send money"},
 	{ID: "fin-flexi", Name: "Mobile Recharge", CatID: "fin", Hint: "flexiload, mobile top-up, airtime, data pack"},
 	{ID: "fin-ccpay", Name: "Credit Card Payment", CatID: "fin", Hint: "credit card bill, CC payment"},

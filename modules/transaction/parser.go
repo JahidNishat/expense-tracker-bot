@@ -214,15 +214,19 @@ func (p *transactionParser) subcategoryAIParser() error {
 		return err
 	}
 
-	// Persist the full result in cache
-	resultJSON, _ := json.Marshal(result)
-	_ = cache.SetCache(inputText, string(resultJSON), -1)
-	if dbErr := configs.InsertAICache(models.AICache{
-		InputText:     inputText,
-		SubcategoryID: result.Subcategory,
-		CreatedAt:     time.Now().Unix(),
-	}); dbErr != nil {
-		logr.DefaultLogger.Errorw("Failed to persist AI cache", "error", dbErr.Error())
+	// Only cache when AI actually classified (not a passthrough from missing API key).
+	if result.Subcategory != "" && result.Subcategory != inputText {
+		resultJSON, _ := json.Marshal(result)
+		_ = cache.SetCache(inputText, string(resultJSON), -1)
+		if dbErr := configs.InsertAICache(models.AICache{
+			InputText:     inputText,
+			SubcategoryID: result.Subcategory,
+			Intent:        result.Intent,
+			Confidence:    result.Confidence,
+			CreatedAt:     time.Now().Unix(),
+		}); dbErr != nil {
+			logr.DefaultLogger.Errorw("Failed to persist AI cache", "error", dbErr.Error())
+		}
 	}
 
 	p.subcategory = result.Subcategory
@@ -419,6 +423,9 @@ func (p *transactionParser) ensureTypeMatchesCategory() {
 	// List of Subcategories that are ALWAYS Expense
 	case "fin-repay", "fin-lend", "fin-return", "fin-tax", "fin-charge", "fin-ins":
 		p.txnType = models.ExpenseTransaction
+	// List of Subcategories that are ALWAYS Transfer (safety net over AI intent)
+	case "fin-with", "fin-deposit", "fin-transfer":
+		p.txnType = models.TransferTransaction
 	}
 }
 
