@@ -72,6 +72,8 @@ CMD ["serve"]
 # ══════════════════════════════════════════════════════════════════════════════
 FROM runtime-base AS wkhtmltopdf
 
+LABEL org.opencontainers.image.source="https://github.com/masudur-rahman/expense-tracker-bot"
+
 ARG TARGETARCH
 ARG WKHTMLTOPDF_VERSION=0.12.6.1-3
 ARG DEBIAN_RELEASE_NAME=bookworm
@@ -121,6 +123,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # Stage 3b · chromedp edition
 # ══════════════════════════════════════════════════════════════════════════════
 FROM chromium-base AS chromedp
+
+LABEL org.opencontainers.image.source="https://github.com/masudur-rahman/expense-tracker-bot"
 
 ENV CHROME_PATH=/usr/bin/chromium
 RUN mkdir -p /app/configs /app/.sqlite && \

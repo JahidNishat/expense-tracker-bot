@@ -1,0 +1,74 @@
+# syntax=docker/dockerfile:1
+# Debug image with Delve for remote debugging from GoLand/VSCode.
+# Usage: docker compose -f docker-compose.debug.yml up
+# GoLand: Run > Edit Configurations > Go Remote > localhost:2345
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Stage 1 · Debug builder (no optimizations, includes dlv)
+# ══════════════════════════════════════════════════════════════════════════════
+FROM golang:1.26-bookworm AS debug-builder
+
+ARG VERSION=dev
+ARG BUILD_DATE=unknown
+ARG GIT_COMMIT=none
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
+
+# Install Delve debugger
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
+
+COPY . .
+
+# Build WITHOUT optimizations/inlining — required for Delve to work properly
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=linux \
+    go build \
+      -gcflags="all=-N -l" \
+      -ldflags "\
+        -X github.com/masudur-rahman/expense-tracker-bot/cmd.Version=${VERSION} \
+        -X github.com/masudur-rahman/expense-tracker-bot/cmd.BuildDate=${BUILD_DATE} \
+        -X github.com/masudur-rahman/expense-tracker-bot/cmd.GitCommit=${GIT_COMMIT}" \
+      -o /bin/expense-tracker .
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Stage 2 · Debug runtime
+# ══════════════════════════════════════════════════════════════════════════════
+FROM debian:bookworm-slim AS debug-runtime
+
+LABEL org.opencontainers.image.source="https://github.com/masudur-rahman/expense-tracker-bot"
+
+RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates fontconfig && \
+    echo 'Etc/UTC' > /etc/timezone
+
+WORKDIR /app
+
+COPY --from=debug-builder /go/bin/dlv /usr/local/bin/dlv
+COPY --from=debug-builder /bin/expense-tracker /app/expense-tracker
+
+RUN mkdir -p /app/configs /app/.sqlite
+
+# Port 8080: application HTTP, Port 2345: Delve remote debug
+EXPOSE 8080 2345
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD ["wget", "-q", "--spider", "http://localhost:8080/healthz"] || exit 1
+
+# Delve listens on :2345, runs the app binary, forwards -- args to the binary
+ENTRYPOINT ["dlv", \
+  "--listen=:2345", \
+  "--headless=true", \
+  "--api-version=2", \
+  "--accept-multiclient", \
+  "--log", \
+  "exec", "/app/expense-tracker", \
+  "--"]
+CMD ["serve"]

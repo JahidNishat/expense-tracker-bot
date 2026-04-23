@@ -5,11 +5,11 @@ CONFIG_FILE="/app/config.json"
 
 # Read config file values (if present), env vars take precedence
 cfg() {
-  val=""
-  if [ -f "$CONFIG_FILE" ]; then
-    val=$(jq -r ".$1 // empty" "$CONFIG_FILE" 2>/dev/null)
-  fi
-  echo "$val"
+    val=""
+    if [ -f "$CONFIG_FILE" ]; then
+        val=$(jq -r ".$1 // empty" "$CONFIG_FILE" 2>/dev/null)
+    fi
+    echo "$val"
 }
 
 LISTEN_HOST="${LISTEN_HOST:-$(cfg listenHost)}"
@@ -24,14 +24,14 @@ SERVER_NAME="${SERVER_NAME:-_}"
 API_BASE="${API_BASE:-https://xpense-api.mrahman.xyz}"
 
 # Generate runtime config for the frontend JS app
-cat > /usr/share/nginx/html/config.js <<EOF
+cat >/usr/share/nginx/html/config.js <<EOF
 window.__CONFIG__ = {
   API_BASE: "${API_BASE}",
 };
 EOF
 
 # Generate nginx config
-cat > /etc/nginx/conf.d/default.conf <<EOF
+cat >/etc/nginx/conf.d/default.conf <<EOF
 server {
     listen ${LISTEN_HOST}:${LISTEN_PORT};
     server_name ${SERVER_NAME};

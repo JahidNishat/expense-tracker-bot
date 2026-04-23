@@ -17,6 +17,8 @@ RUN npm run build
 # ══════════════════════════════════════════════════════════════════════════════
 FROM nginx:alpine
 
+LABEL org.opencontainers.image.source="https://github.com/masudur-rahman/expense-tracker-bot"
+
 RUN apk add --no-cache jq
 
 # Copy built assets
