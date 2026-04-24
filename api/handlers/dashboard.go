@@ -23,7 +23,7 @@ func Dashboard(ctx telebot.Context) error {
 	}
 
 	cfg := configs.TrackerConfig.Server
-	if !cfg.Enabled {
+	if !cfg.DashboardEnabled {
 		return ctx.Send("Web dashboard is not enabled.")
 	}
 

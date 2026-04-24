@@ -23,15 +23,15 @@ type ExpenseConfiguration struct {
 
 // ServerConfig holds settings for the optional REST API server.
 type ServerConfig struct {
-	Enabled       bool   `json:"enabled" yaml:"enabled"`
-	JWTSecret     string `json:"jwtSecret" yaml:"jwtSecret"`
-	RefreshSecret string `json:"refreshSecret" yaml:"refreshSecret"`
-	BotUsername   string `json:"botUsername" yaml:"botUsername"`
-	CORSOrigin    string `json:"corsOrigin" yaml:"corsOrigin"`
-	Host          string `json:"host" yaml:"host"`
-	Port          int    `json:"port" yaml:"port"`
-	BaseURL       string `json:"baseURL" yaml:"baseURL"`
-	DashboardURL  string `json:"dashboardURL" yaml:"dashboardURL"`
+	DashboardEnabled bool   `json:"dashboardEnabled" yaml:"dashboardEnabled"`
+	JWTSecret        string `json:"jwtSecret" yaml:"jwtSecret"`
+	RefreshSecret    string `json:"refreshSecret" yaml:"refreshSecret"`
+	BotUsername      string `json:"botUsername" yaml:"botUsername"`
+	CORSOrigin       string `json:"corsOrigin" yaml:"corsOrigin"`
+	Host             string `json:"host" yaml:"host"`
+	Port             int    `json:"port" yaml:"port"`
+	BaseURL          string `json:"baseURL" yaml:"baseURL"`
+	DashboardURL     string `json:"dashboardURL" yaml:"dashboardURL"`
 }
 
 type Telegram struct {
@@ -141,7 +141,7 @@ func (c *ExpenseConfiguration) OverrideWithEnv() {
 
 	// Server Overrides
 	if os.Getenv("SERVER_ENABLED") == "true" {
-		c.Server.Enabled = true
+		c.Server.DashboardEnabled = true
 	}
 	if secret := os.Getenv("SERVER_JWT_SECRET"); secret != "" {
 		c.Server.JWTSecret = secret

@@ -33,6 +33,6 @@ RUN chmod +x /docker-entrypoint.sh
 # Runtime-configurable via env vars or /app/config.json
 # See config.example.json for file format
 
-EXPOSE 80
+EXPOSE 65262
 
 ENTRYPOINT ["/docker-entrypoint.sh"]

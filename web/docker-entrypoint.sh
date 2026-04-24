@@ -19,7 +19,7 @@ API_BASE="${API_BASE:-$(cfg apiBase)}"
 
 # Apply defaults
 LISTEN_HOST="${LISTEN_HOST:-0.0.0.0}"
-LISTEN_PORT="${LISTEN_PORT:-80}"
+LISTEN_PORT="${LISTEN_PORT:-65262}"
 SERVER_NAME="${SERVER_NAME:-_}"
 API_BASE="${API_BASE:-https://xpense-api.mrahman.xyz}"
 
@@ -50,4 +50,5 @@ server {
 }
 EOF
 
+echo "Starting Nginx on ${LISTEN_HOST}:${LISTEN_PORT} with API_BASE=${API_BASE}..."
 exec nginx -g 'daemon off;'
