@@ -51,7 +51,7 @@ export default function Select({ label, options, error, style, ...props }: Selec
           }}
           {...props}
         >
-          <option value="">Select...</option>
+          {!options.some(o => o.value === '') && <option value="">Select...</option>}
           {options.map(o => (
             <option key={o.value} value={o.value}>
               {o.label}
