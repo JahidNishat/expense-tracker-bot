@@ -8,13 +8,24 @@ import { logout as apiLogout } from '../api/endpoints'
 interface AuthContextValue {
   isAuthenticated: boolean
   isLoading: boolean
+  isAdmin: boolean
   login: (accessToken: string, refreshToken?: string) => void
   logout: () => void
+}
+
+function decodeIsAdmin(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return !!payload.is_admin
+  } catch {
+    return false
+  }
 }
 
 export const AuthContext = createContext<AuthContextValue>({
   isAuthenticated: false,
   isLoading: true,
+  isAdmin: false,
   login: () => {},
   logout: () => {},
 })
@@ -22,17 +33,23 @@ export const AuthContext = createContext<AuthContextValue>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!getAccessToken())
   const [isLoading, setIsLoading] = useState(() => !getAccessToken() && !!getRefreshToken())
+  const [isAdmin, setIsAdmin] = useState(() => {
+    const t = getAccessToken()
+    return t ? decodeIsAdmin(t) : false
+  })
 
   const login = useCallback((accessToken: string, refreshToken?: string) => {
     setAccessToken(accessToken)
     if (refreshToken) setRefreshToken(refreshToken)
     setIsAuthenticated(true)
+    setIsAdmin(decodeIsAdmin(accessToken))
   }, [])
 
   const logout = useCallback(async () => {
     try { await apiLogout() } catch { /* ignore */ }
     clearTokens()
     setIsAuthenticated(false)
+    setIsAdmin(false)
   }, [])
 
   useEffect(() => {
@@ -58,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setAccessToken(data.accessToken)
           if (data.refreshToken) setRefreshToken(data.refreshToken)
           setIsAuthenticated(true)
+          setIsAdmin(decodeIsAdmin(data.accessToken))
         } else {
           clearTokens()
         }
@@ -67,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, isAdmin, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

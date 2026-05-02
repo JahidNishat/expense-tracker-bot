@@ -20,6 +20,7 @@ type AccessClaims struct {
 	jwt.RegisteredClaims
 	UserID   int64  `json:"uid"`
 	Username string `json:"uname"`
+	IsAdmin  bool   `json:"is_admin,omitempty"`
 }
 
 // RefreshClaims holds the JWT claims for a refresh token.
@@ -37,7 +38,7 @@ type TokenPair struct {
 }
 
 // GenerateAccessToken creates a signed short-lived JWT.
-func GenerateAccessToken(userID int64, username, secret string) (string, error) {
+func GenerateAccessToken(userID int64, username, secret string, isAdmin bool) (string, error) {
 	now := time.Now()
 	claims := AccessClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -48,6 +49,7 @@ func GenerateAccessToken(userID int64, username, secret string) (string, error) 
 		},
 		UserID:   userID,
 		Username: username,
+		IsAdmin:  isAdmin,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(secret))

@@ -15,7 +15,7 @@ const testRefreshSecret = "test-refresh-secret"
 
 func TestGenerateAccessToken_roundtrip(t *testing.T) {
 	t.Parallel()
-	token, err := GenerateAccessToken(42, "masud", testSecret)
+	token, err := GenerateAccessToken(42, "masud", testSecret, false)
 	require.NoError(t, err)
 	assert.NotEmpty(t, token)
 
@@ -51,7 +51,7 @@ func TestGenerateRefreshToken_uniqueUUIDs(t *testing.T) {
 
 func TestParseAccessToken_wrongSecret(t *testing.T) {
 	t.Parallel()
-	token, err := GenerateAccessToken(1, "user", testSecret)
+	token, err := GenerateAccessToken(1, "user", testSecret, false)
 	require.NoError(t, err)
 
 	_, err = ParseAccessToken(token, "wrong-secret")

@@ -14,7 +14,7 @@ import (
 const testJWTSecret = "test-secret-key"
 
 func TestJWTAuth_validToken(t *testing.T) {
-	token, err := authmod.GenerateAccessToken(1, "alice", testJWTSecret)
+	token, err := authmod.GenerateAccessToken(1, "alice", testJWTSecret, false)
 	require.NoError(t, err)
 
 	var gotClaims *authmod.AccessClaims
@@ -50,7 +50,7 @@ func TestJWTAuth_missingHeader(t *testing.T) {
 }
 
 func TestJWTAuth_wrongSecret(t *testing.T) {
-	token, err := authmod.GenerateAccessToken(1, "alice", "other-secret")
+	token, err := authmod.GenerateAccessToken(1, "alice", "other-secret", false)
 	require.NoError(t, err)
 
 	handler := JWTAuth(testJWTSecret)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
