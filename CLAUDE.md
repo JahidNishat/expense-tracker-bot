@@ -77,11 +77,13 @@ Completed full Account/DebtorCreditor -> Wallet/Contact rename. CI/CD passing. B
 
 ## Learned
 - styx ORM cannot handle `*time.Time` pointer fields — use `int64` unix timestamps
+- styx ORM zero-value filtering is FIXED in v1.3.0+ — use `MustFilterCols("col")` to force zero-value fields in WHERE clauses. Also available: `req` struct tag (e.g. `db:"deleted_at,req"`). The old bug where empty strings/zero ints were silently dropped from WHERE is solved.
 - `for { select { case <-ticker.C: } }` triggers gosimple S1000 — use `for range ticker.C`
 - golangci-lint v1.64+ removed `run.skip-dirs` — use `issues.exclude-dirs` instead
 - Parser test: "friends" contains "fri" which matches Friday — avoid day-name substrings in test inputs
 - `fmt.Fprintln` already adds newline — don't pass `"text\n"` (triggers go vet)
 - Cache types: `cache.CacheMap` (memory), `cache.CacheRedis` — no `CacheMemory`
+- Amount parser: numbers followed by units (kg, km, g, ml, l, pcs) must be skipped — they're quantities, not monetary amounts
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
