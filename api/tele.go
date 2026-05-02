@@ -20,7 +20,7 @@ func TeleBotRoutes() (*telebot.Bot, error) {
 		return nil, err
 	}
 
-	bot.Use(masudurRahman())
+	bot.Use(rejectBots())
 	bot.Use(AutoKeyboardReset())
 
 	bot.Handle("/start", handlers.StartTrackingExpenses)
@@ -56,7 +56,7 @@ func TeleBotRoutes() (*telebot.Bot, error) {
 	return bot, nil
 }
 
-func masudurRahman() telebot.MiddlewareFunc {
+func rejectBots() telebot.MiddlewareFunc {
 	return func(next telebot.HandlerFunc) telebot.HandlerFunc {
 		return func(ctx telebot.Context) error {
 			//if ctx.Sender().Username != configs.TrackerConfig.Telegram.User {

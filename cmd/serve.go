@@ -57,6 +57,7 @@ to quickly create a Cobra application.`,
 		}
 		configs.InitiateCache()
 		configs.LoadAICacheIntoMemory()
+		configs.SeedAdminUser()
 
 		bot, err := api.TeleBotRoutes()
 		if err != nil {

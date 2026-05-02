@@ -23,6 +23,7 @@ type Profile struct {
 	LastName     string `json:"lastName"`
 	Timezone     string `db:"timezone" json:"timezone"`
 	MobileNumber string `db:"mobile_number" json:"mobileNumber"`
+	IsAdmin      bool   `db:"is_admin" json:"isAdmin"`
 }
 
 func (Profile) TableName() string {

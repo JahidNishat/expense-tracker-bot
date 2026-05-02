@@ -108,6 +108,7 @@ func fixNullZeroValues(db isql.Engine) error {
 		`UPDATE "budget" SET alert_at = 80 WHERE alert_at IS NULL`,
 		`UPDATE "ai_cache" SET intent = '' WHERE intent IS NULL`,
 		`UPDATE "refresh_token" SET revoked = 0 WHERE revoked IS NULL`,
+		`UPDATE "profile" SET is_admin = false WHERE is_admin IS NULL`,
 	}
 	for _, stmt := range stmts {
 		if _, err := db.Exec(ctx, stmt); err != nil {
@@ -234,6 +235,30 @@ func InsertAICache(entry models.AICache) error {
 	}
 	_, err := GetUnitOfWork().SQL.Table(models.AICache{}.TableName()).InsertOne(context.Background(), entry)
 	return err
+}
+
+// SeedAdminUser marks the configured Telegram user as admin.
+func SeedAdminUser() {
+	username := TrackerConfig.Telegram.User
+	if username == "" {
+		return
+	}
+
+	ctx := context.Background()
+	var profile models.Profile
+	found, err := GetUnitOfWork().SQL.Table(profile.TableName()).FindOne(ctx, &profile, models.Profile{Username: username})
+	if err != nil || !found {
+		return
+	}
+
+	if profile.IsAdmin {
+		return
+	}
+
+	profile.IsAdmin = true
+	if err := GetUnitOfWork().SQL.Table(profile.TableName()).ID(profile.ID).MustCols("is_admin").UpdateOne(ctx, profile); err != nil {
+		logr.DefaultLogger.Errorw("Failed to seed admin user", "username", username, "error", err.Error())
+	}
 }
 
 // safeEngine is a thread-safe wrapper around isql.Engine.
