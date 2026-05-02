@@ -48,10 +48,13 @@ func (u *SQLContactRepository) GetContactByID(id int64) (*models.Contacts, error
 
 func (u *SQLContactRepository) GetContactByName(userID int64, name string) (*models.Contacts, error) {
 	u.logger.Infow("get contact by name", "userID", userID, "name", name)
+	if name == "" {
+		return nil, models.ErrContactNotFound{UserID: userID}
+	}
 	ctx := context.Background()
 	filter := models.Contacts{UserID: userID, NickName: name}
 	var c models.Contacts
-	found, err := u.db.FindOne(ctx, &c, filter)
+	found, err := u.db.MustFilterCols("nick_name").FindOne(ctx, &c, filter)
 	if err != nil {
 		return nil, err
 	}

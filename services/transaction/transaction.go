@@ -255,6 +255,9 @@ func (ts *txnService) applyBalances(uow styx.UnitOfWork, txn models.Transaction)
 }
 
 func (ts *txnService) updateContactBalance(uow styx.UnitOfWork, txn models.Transaction, amount float64) error {
+	if txn.ContactName == "" {
+		return nil
+	}
 	contact, err := ts.contactRepo.WithUnitOfWork(uow).GetContactByName(txn.UserID, txn.ContactName)
 	if err != nil {
 		return err
