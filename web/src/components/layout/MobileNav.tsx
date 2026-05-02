@@ -1,38 +1,57 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, ArrowLeftRight, Wallet, Target, Settings, LogOut } from 'lucide-react'
-import { useAuth } from '../../hooks/useAuth'
+import { ICONS } from '../ui/Icons'
 
-const links = [
-  { to: '/', icon: LayoutDashboard, label: 'Home' },
-  { to: '/transactions', icon: ArrowLeftRight, label: 'Txns' },
-  { to: '/wallets', icon: Wallet, label: 'Wallets' },
-  { to: '/budgets', icon: Target, label: 'Budgets' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
+const items = [
+  { to: '/', icon: ICONS.dashboard, label: 'Home' },
+  { to: '/transactions', icon: ICONS.transactions, label: 'Txns' },
+  { to: '/wallets', icon: ICONS.wallet, label: 'Wallets' },
+  { to: '/budgets', icon: ICONS.budget, label: 'Budgets' },
+  { to: '/settings', icon: ICONS.settings, label: 'Settings' },
 ]
 
 export default function MobileNav() {
-  const { logout } = useAuth()
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2 z-50">
-      {links.map(({ to, icon: Icon, label }) => (
-        <NavLink
-          key={to}
-          to={to}
-          className={({ isActive }) =>
-            `flex flex-col items-center text-xs ${isActive ? 'text-blue-600' : 'text-gray-500'}`
-          }
-        >
-          <Icon size={20} />
-          {label}
-        </NavLink>
-      ))}
-      <button
-        onClick={logout}
-        className="flex flex-col items-center text-xs text-gray-500 hover:text-red-500 transition-colors cursor-pointer"
-      >
-        <LogOut size={20} />
-        Logout
-      </button>
+    <nav
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        background: 'var(--color-surface)',
+        borderTop: '1px solid var(--color-border)',
+        zIndex: 200,
+        padding: '6px 8px env(safe-area-inset-bottom, 8px)',
+      }}
+      className="flex! md:hidden!"
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-around', width: '100%' }}>
+        {items.map(item => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            style={({ isActive }) => ({
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 2,
+              padding: '8px 12px',
+              borderRadius: 'var(--radius-sm)',
+              textDecoration: 'none',
+              color: isActive ? 'var(--color-primary)' : 'var(--color-text-tertiary)',
+              fontSize: 10,
+              fontWeight: isActive ? 700 : 500,
+              transition: 'color var(--transition-fast)',
+            })}
+          >
+            {({ isActive }) => (
+              <>
+                <span style={{ opacity: isActive ? 1 : 0.6 }}>{item.icon(22)}</span>
+                <span>{item.label}</span>
+              </>
+            )}
+          </NavLink>
+        ))}
+      </div>
     </nav>
   )
 }

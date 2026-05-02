@@ -25,7 +25,7 @@ export default function Landing() {
       {/* NAV */}
       <nav className="landing-nav">
         <Link to="/" className="logo">
-          <div className="logo-icon">E</div>Expense Tracker
+          <img src="/logo-short.svg" alt="" className="logo-icon" />Expense Tracker
         </Link>
         <ul>
           <li>
@@ -139,7 +139,7 @@ export default function Landing() {
             </div>
             <div className="dash-frame">
               <div className="dash-sidebar">
-                <div className="dot">E</div>
+                <img src="/logo-short.svg" alt="" className="dot" />
                 <span>Expense Tracker</span>
               </div>
               <div className="dash-body">
