@@ -30,5 +30,19 @@ bin/
 .refactor*
 .claude/settings.local.json
 .claude/plan.md
+.claude/plans/
+.claude/skills/
+
+# Editor / AI tool configs
+.cursor/
+.cursorrules
+.kiro/
+.mcp.json
+.opencode.json
+.windsurfrules
+
+# Debug
+docker-compose.debug.yml
+
 # Added by code-review-graph
 .code-review-graph/
