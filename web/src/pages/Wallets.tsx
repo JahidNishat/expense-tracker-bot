@@ -93,8 +93,15 @@ export default function Wallets() {
 
       {/* Contacts Section */}
       <section>
-        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)' }}>Frequent Contacts</h2>
+        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ minWidth: 0 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>Frequent Contacts</h2>
+            <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: '4px 0 0', fontWeight: 500 }}>
+              <span style={{ color: 'var(--color-success)', fontWeight: 700 }}>+</span> they owe you
+              <span style={{ margin: '0 8px', color: 'var(--color-border)' }}>·</span>
+              <span style={{ color: 'var(--color-danger)', fontWeight: 700 }}>−</span> you owe them
+            </p>
+          </div>
           <Button onClick={() => setShowAddContact(true)} icon={ICONS.plus(16)}>Add Contact</Button>
         </header>
 
@@ -111,7 +118,13 @@ export default function Wallets() {
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
                     {['Contact', 'Email', 'Net Balance', 'Last Transaction'].map(h => (
-                      <th key={h} style={{ padding: '14px 24px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</th>
+                      <th
+                        key={h}
+                        title={h === 'Net Balance' ? 'Positive: they owe you · Negative: you owe them' : undefined}
+                        style={{ padding: '14px 24px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}
+                      >
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>
