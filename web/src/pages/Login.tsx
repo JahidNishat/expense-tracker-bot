@@ -203,7 +203,10 @@ function QRLogin({ status, deepLink, error, onRetry }: { status: string; deepLin
       <div style={{ width: 180, height: 180, margin: '0 auto 20px', borderRadius: 16, border: '2px dashed #DEEBFF', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'white' }}>
         <QRCodeSVG value={deepLink} size={150} />
       </div>
-      <p style={{ fontSize: 14, fontWeight: 700, color: '#505F79', margin: '0 0 8px' }}>Scan with your Telegram app</p>
+      <p style={{ fontSize: 14, fontWeight: 700, color: '#505F79', margin: '0 0 8px' }}>Scan with phone camera or Google Lens</p>
+      <p style={{ fontSize: 11, color: '#6B778C', margin: '0 0 4px' }}>
+        Telegram's in-app camera only previews bot profile.
+      </p>
       <p style={{ fontSize: 12, color: '#6B778C', margin: 0 }}>
         Or <a href={deepLink} target="_blank" rel="noreferrer" style={{ color: '#0052CC', fontWeight: 700, textDecoration: 'none' }}>click here</a> to open in Telegram
       </p>
