@@ -8,10 +8,35 @@ import (
 	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/api/handlers"
+	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/models/gqtypes"
 	"github.com/masudur-rahman/expense-tracker-bot/modules/convert"
 	"github.com/masudur-rahman/expense-tracker-bot/services/all"
 )
+
+// clampStartTime returns the effective start date for a report period.
+// Fallback chain: registration time → earliest txn time → startTime (computed).
+func clampStartTime(startTime time.Time, registeredAt int64, txns []models.Transaction) time.Time {
+	if registeredAt != 0 {
+		if reg := time.Unix(registeredAt, 0); reg.After(startTime) {
+			return reg
+		}
+		return startTime
+	}
+	// fallback: earliest transaction timestamp
+	if len(txns) > 0 {
+		earliest := txns[0].Timestamp
+		for _, t := range txns[1:] {
+			if t.Timestamp < earliest {
+				earliest = t.Timestamp
+			}
+		}
+		if first := time.Unix(earliest, 0); first.After(startTime) {
+			return first
+		}
+	}
+	return startTime
+}
 
 // HandleGetReport handles GET /summary/report.
 func HandleGetReport(w http.ResponseWriter, r *http.Request) {
@@ -41,6 +66,7 @@ func HandleGetReport(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusInternalServerError, "list_failed", err.Error())
 		return
 	}
+	startTime = clampStartTime(startTime, user.CreatedAt, txns)
 
 	report := gqtypes.Report{
 		Name:      fmt.Sprintf("%v %v", user.FirstName, user.LastName),
@@ -135,6 +161,7 @@ func HandleGetReportData(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusInternalServerError, "list_failed", err.Error())
 		return
 	}
+	startTime = clampStartTime(startTime, user.CreatedAt, txns)
 
 	report := gqtypes.Report{
 		Name:      fmt.Sprintf("%v %v", user.FirstName, user.LastName),

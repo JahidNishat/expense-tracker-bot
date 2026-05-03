@@ -1,6 +1,8 @@
 package user
 
 import (
+	"time"
+
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/repos"
 	"github.com/masudur-rahman/expense-tracker-bot/services"
@@ -29,6 +31,7 @@ func (cs *contactService) ListContacts(userID int64) ([]models.Contacts, error) 
 }
 
 func (cs *contactService) CreateContact(contact *models.Contacts) error {
+	contact.CreatedAt = time.Now().Unix()
 	return cs.contactRepo.AddNewContact(contact)
 }
 

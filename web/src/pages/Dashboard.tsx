@@ -77,10 +77,10 @@ export default function Dashboard() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   const quickActions = [
-    { label: 'Add Expense', icon: ICONS.arrowDown, onClick: () => navigate('/transactions?add=Expense') },
-    { label: 'Add Income', icon: ICONS.arrowUp, onClick: () => navigate('/transactions?add=Income') },
-    { label: 'Transfer', icon: ICONS.transfer, onClick: () => navigate('/transactions?add=Transfer') },
-    { label: 'Statement', icon: ICONS.file, onClick: () => setShowStatementModal(true) },
+    { label: 'Add Expense', icon: ICONS.arrowDown, onClick: () => navigate('/transactions?add=Expense'), mobileOrder: 1 },
+    { label: 'Add Income', icon: ICONS.arrowUp, onClick: () => navigate('/transactions?add=Income'), mobileOrder: 3 },
+    { label: 'Transfer', icon: ICONS.transfer, onClick: () => navigate('/transactions?add=Transfer'), mobileOrder: 2 },
+    { label: 'Statement', icon: ICONS.file, onClick: () => setShowStatementModal(true), mobileOrder: 4 },
   ]
 
   return (
@@ -111,8 +111,9 @@ export default function Dashboard() {
               <button
                 key={a.label}
                 onClick={a.onClick}
+                data-order={a.mobileOrder}
                 style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 18px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 18px', whiteSpace: 'nowrap',
                   borderRadius: 'var(--radius-md)',
                   background: 'rgba(255,255,255,0.15)',
                   backdropFilter: 'blur(12px)',
@@ -254,7 +255,7 @@ export default function Dashboard() {
 
       {/* Transaction Detail Slide-in */}
       {selectedTxn && (
-        <TransactionDetail txn={selectedTxn} subcatMap={subcatMap} onClose={() => setSelectedTxn(null)} />
+        <TransactionDetail txn={selectedTxn} subcatMap={subcatMap} catMap={catMap} onClose={() => setSelectedTxn(null)} />
       )}
 
       {showStatementModal && <StatementModal onClose={() => setShowStatementModal(false)} />}
@@ -285,7 +286,7 @@ function SummaryCard({ label, value, subtext, accentColor, icon }: {
 }
 
 /* Transaction Detail Modal */
-function TransactionDetail({ txn, subcatMap, onClose }: { txn: any; subcatMap: Map<string, string>; onClose: () => void }) {
+function TransactionDetail({ txn, subcatMap, catMap, onClose }: { txn: any; subcatMap: Map<string, string>; catMap: Map<string, string>; onClose: () => void }) {
   const { data: wallets } = useWallets()
   const { data: contacts } = useContacts()
 
@@ -295,24 +296,30 @@ function TransactionDetail({ txn, subcatMap, onClose }: { txn: any; subcatMap: M
   const fromLabel = txn.srcId ? resolveWallet(txn.srcId) : ''
   const toLabel = txn.dstId ? resolveWallet(txn.dstId) : txn.contactName ? resolveContact(txn.contactName) : ''
 
+  const txnDate = new Date(txn.timestamp * 1000)
+  const dateStr = txnDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+  const timeStr = txnDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  const accentColor = txn.type === 'Income' ? 'var(--color-success)' : txn.type === 'Transfer' ? 'var(--color-primary)' : 'var(--color-danger)'
+  const heroGradient = txn.type === 'Income'
+    ? 'linear-gradient(135deg, rgba(40,167,69,0.09) 0%, rgba(0,200,160,0.05) 100%)'
+    : txn.type === 'Transfer'
+    ? 'linear-gradient(135deg, rgba(0,82,204,0.09) 0%, rgba(100,80,220,0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(220,53,69,0.09) 0%, rgba(255,120,50,0.05) 100%)'
+
+  const catId = txn.subcategoryId?.split('-')[0] ?? ''
   const details = [
-    { label: 'Category', value: subcatMap.get(txn.subcategoryId) || txn.subcategoryId },
+    { label: 'Category', value: catMap.get(catId) || catId },
+    { label: 'Subcategory', value: subcatMap.get(txn.subcategoryId) || txn.subcategoryId },
     ...(fromLabel ? [{ label: 'From', value: fromLabel }] : []),
     ...(toLabel ? [{ label: 'To', value: toLabel }] : []),
-    { label: 'Date', value: new Date(txn.timestamp * 1000).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) },
     { label: 'Remarks', value: txn.remarks || '—' },
   ]
 
   return (
     <>
-      {/* Backdrop */}
-      <div onClick={onClose} style={{
-        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)',
-        zIndex: 300, backdropFilter: 'blur(2px)',
-      }} />
-      {/* Panel */}
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 300, backdropFilter: 'blur(2px)' }} />
       <div style={{
-        position: 'fixed', top: 0, right: 0, bottom: 0, width: 400, maxWidth: '90vw',
+        position: 'fixed', top: 0, right: 0, bottom: 0, width: 420, maxWidth: '92vw',
         background: 'var(--color-surface)', zIndex: 310,
         boxShadow: '-8px 0 32px rgba(0,0,0,0.12)',
         display: 'flex', flexDirection: 'column',
@@ -320,34 +327,34 @@ function TransactionDetail({ txn, subcatMap, onClose }: { txn: any; subcatMap: M
       }}>
         <style>{`@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }`}</style>
 
-        <div style={{ padding: '24px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>Transaction Details</h3>
-          <button onClick={onClose} style={{
-            width: 32, height: 32, borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)',
-            background: 'var(--color-bg)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'var(--color-text-tertiary)', fontSize: 18,
-          }}>×</button>
+        {/* Header */}
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>Transaction Details</h3>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', background: 'var(--color-bg)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-tertiary)', fontSize: 18 }}>×</button>
         </div>
 
-        <div style={{ padding: 24, flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* Amount */}
-          <div style={{ textAlign: 'center', padding: '24px 0', background: 'var(--color-bg)', borderRadius: 'var(--radius-lg)' }}>
-            <p style={{
-              fontSize: 32, fontWeight: 700, margin: 0,
-              color: txn.type === 'Income' ? 'var(--color-success)' : txn.type === 'Transfer' ? 'var(--color-primary)' : 'var(--color-danger)',
-            }}>
-              {txn.type === 'Income' ? '+' : txn.type === 'Transfer' ? '' : '-'}{fmt(txn.amount)}
+        <div style={{ padding: 24, flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Hero: amount + type + date/time */}
+          <div style={{ borderRadius: 'var(--radius-lg)', background: heroGradient, border: '1px solid var(--color-border)', padding: '24px 20px', textAlign: 'center' }}>
+            <p style={{ fontSize: 36, fontWeight: 800, margin: '0 0 8px', color: accentColor, letterSpacing: '-0.02em' }}>
+              {txn.type === 'Income' ? '+' : txn.type === 'Transfer' ? '' : '−'}{fmt(txn.amount)}
             </p>
             <Badge type={txn.type} />
+            <p style={{ margin: '12px 0 0', fontSize: 12, color: 'var(--color-text-tertiary)', fontWeight: 500 }}>
+              {dateStr} · {timeStr}
+            </p>
           </div>
 
-          {/* Details */}
-          {details.map(item => (
-            <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--color-border)' }}>
-              <span style={{ fontSize: 13, color: 'var(--color-text-tertiary)', fontWeight: 500 }}>{item.label}</span>
-              <span style={{ fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 600, textAlign: 'right', maxWidth: '60%' }}>{item.value}</span>
-            </div>
-          ))}
+          {/* Detail rows */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {details.map(item => (
+              <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--color-bg)' }}>
+                <span style={{ width: 3, height: 32, borderRadius: 2, background: accentColor, flexShrink: 0 }} />
+                <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 72 }}>{item.label}</span>
+                <span style={{ fontSize: 14, color: 'var(--color-text-primary)', fontWeight: 600, flex: 1, textAlign: 'right' }}>{item.value}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </>
@@ -361,7 +368,8 @@ function StatementModal({ onClose }: { onClose: () => void }) {
     { label: 'Last 30 Days', value: 'one_month' },
     { label: 'Last 6 Months', value: 'half_year' },
     { label: 'Current Year', value: 'this_year' },
-    { label: 'All Time', value: 'all-time' },
+    { label: 'Last 1 Year', value: 'one_year' },
+    { label: 'All Time', value: 'all_time' },
   ]
 
   const handlePreview = (duration: string) => {

@@ -83,6 +83,7 @@ func ToWalletAPIFormat(w models.Wallet) gqtypes.Wallet {
 		ShortName: w.ShortName,
 		Name:      w.Name,
 		Balance:   w.Balance,
+		CreatedAt: time.Unix(w.CreatedAt, 0),
 	}
 }
 
@@ -94,5 +95,6 @@ func ToContactAPIFormat(c models.Contacts) gqtypes.Contact {
 		Email:            c.Email,
 		NetBalance:       c.NetBalance,
 		LastTxnTimestamp: c.LastTxnTimestamp,
+		CreatedAt:        time.Unix(c.CreatedAt, 0),
 	}
 }

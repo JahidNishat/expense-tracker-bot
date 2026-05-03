@@ -11,6 +11,10 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
   }
+  .balance-actions button[data-order="1"] { order: 1; }
+  .balance-actions button[data-order="2"] { order: 2; }
+  .balance-actions button[data-order="3"] { order: 3; }
+  .balance-actions button[data-order="4"] { order: 4; }
 }
 
 :root {

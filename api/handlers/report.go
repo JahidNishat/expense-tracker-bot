@@ -275,6 +275,8 @@ func CalculateStartTime(duration SummaryDuration) time.Time {
 		startTime = time.Date(now.Year(), 1, 1, 0, 0, 0, 0, now.Location())
 	case DurationOneYear:
 		startTime = now.AddDate(-1, 0, 0)
+	case DurationAllTime:
+		startTime = time.Time{}
 	}
 	return startTime
 }

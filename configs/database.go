@@ -109,6 +109,9 @@ func fixNullZeroValues(db isql.Engine) error {
 		`UPDATE "ai_cache" SET intent = '' WHERE intent IS NULL`,
 		`UPDATE "refresh_token" SET revoked = 0 WHERE revoked IS NULL`,
 		`UPDATE "profile" SET is_admin = false WHERE is_admin IS NULL`,
+		`UPDATE "profile" SET created_at = 0 WHERE created_at IS NULL`,
+		`UPDATE "wallet" SET created_at = 0 WHERE created_at IS NULL`,
+		`UPDATE "contacts" SET created_at = 0 WHERE created_at IS NULL`,
 	}
 	for _, stmt := range stmts {
 		if _, err := db.Exec(ctx, stmt); err != nil {

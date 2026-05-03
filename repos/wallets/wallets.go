@@ -72,7 +72,7 @@ func (a *SQLWalletRepository) AddNewWallet(wallet *models.Wallet) error {
 	} else if !models.IsErrNotFound(err) {
 		return err
 	}
-	_, err = a.db.MustCols("version", "balance", "last_txn_amount").InsertOne(ctx, wallet)
+	_, err = a.db.MustCols("version", "balance", "last_txn_amount", "created_at").InsertOne(ctx, wallet)
 	return err
 }
 

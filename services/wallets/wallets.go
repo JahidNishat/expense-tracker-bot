@@ -2,6 +2,7 @@ package wallets
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/repos"
@@ -34,6 +35,7 @@ func (ws *walletService) CreateWallet(wallet *models.Wallet) error {
 	if wallet.UserID == 0 {
 		return fmt.Errorf("user-id can't be empty")
 	}
+	wallet.CreatedAt = time.Now().Unix()
 	return ws.walletRepo.AddNewWallet(wallet)
 }
 

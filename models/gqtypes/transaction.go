@@ -54,20 +54,22 @@ type SummaryGroups struct {
 }
 
 type Wallet struct {
-	ID        int64   `json:"id"`
-	Type      string  `json:"type"`
-	ShortName string  `json:"shortName"`
-	Name      string  `json:"name"`
-	Balance   float64 `json:"balance"`
+	ID        int64     `json:"id"`
+	Type      string    `json:"type"`
+	ShortName string    `json:"shortName"`
+	Name      string    `json:"name"`
+	Balance   float64   `json:"balance"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 type Contact struct {
-	ID               int64   `json:"id"`
-	NickName         string  `json:"nickName"`
-	FullName         string  `json:"fullName"`
-	Email            string  `json:"email"`
-	NetBalance       float64 `json:"netBalance"`
-	LastTxnTimestamp int64   `json:"lastTxnTimestamp"`
+	ID               int64     `json:"id"`
+	NickName         string    `json:"nickName"`
+	FullName         string    `json:"fullName"`
+	Email            string    `json:"email"`
+	NetBalance       float64   `json:"netBalance"`
+	LastTxnTimestamp int64     `json:"lastTxnTimestamp"`
+	CreatedAt        time.Time `json:"createdAt"`
 }
 
 type Report struct {

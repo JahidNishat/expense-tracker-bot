@@ -22,6 +22,7 @@ type Wallet struct {
 	LastTxnAmount    float64    `db:"last_txn_amount" json:"lastTxnAmount"`
 	LastTxnTimestamp int64      `db:"last_txn_timestamp" json:"lastTxnTimestamp"`
 	Version          int64      `db:"version" json:"version"`
+	CreatedAt        int64      `db:"created_at" json:"createdAt"`
 }
 
 func (Wallet) TableName() string {

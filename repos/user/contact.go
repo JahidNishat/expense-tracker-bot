@@ -87,7 +87,7 @@ func (u *SQLContactRepository) AddNewContact(contact *models.Contacts) error {
 	} else if !models.IsErrNotFound(err) {
 		return err
 	}
-	_, err = u.db.MustCols("net_balance", "last_txn_timestamp").InsertOne(ctx, contact)
+	_, err = u.db.MustCols("net_balance", "last_txn_timestamp", "created_at").InsertOne(ctx, contact)
 	return err
 }
 

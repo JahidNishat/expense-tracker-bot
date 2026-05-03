@@ -34,6 +34,7 @@ const (
 	DurationHalfYear  SummaryDuration = "half_year"
 	DurationThisYear  SummaryDuration = "this_year"
 	DurationOneYear   SummaryDuration = "one_year"
+	DurationAllTime   SummaryDuration = "all_time"
 )
 
 type SummaryCallbackOptions struct {
@@ -201,6 +202,7 @@ func generateSummaryDurationInlineButton(callbackOpts CallbackOptions) []telebot
 		{DurationHalfYear, "6 Months"},
 		{DurationThisYear, "This Year"},
 		{DurationOneYear, "1 Year"},
+		{DurationAllTime, "All Time"},
 	}
 	inlineButtons := make([]telebot.InlineButton, 0, len(durations))
 	for _, d := range durations {

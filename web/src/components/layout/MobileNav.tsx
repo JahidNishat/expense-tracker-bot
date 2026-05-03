@@ -1,7 +1,9 @@
+import { useMemo } from 'react'
 import { NavLink } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth'
 import { ICONS } from '../ui/Icons'
 
-const items = [
+const baseItems = [
   { to: '/', icon: ICONS.dashboard, label: 'Home' },
   { to: '/transactions', icon: ICONS.transactions, label: 'Txns' },
   { to: '/wallets', icon: ICONS.wallet, label: 'Wallets' },
@@ -10,6 +12,11 @@ const items = [
 ]
 
 export default function MobileNav() {
+  const { isAdmin } = useAuth()
+  const items = useMemo(() =>
+    isAdmin ? [...baseItems, { to: '/admin', icon: ICONS.admin, label: 'Admin' }] : baseItems,
+    [isAdmin]
+  )
   return (
     <nav
       style={{

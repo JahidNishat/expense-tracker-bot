@@ -9,6 +9,7 @@ type Contacts struct {
 	ContactInfo      string  `json:"contactInfo"`
 	NetBalance       float64 `db:"net_balance" json:"netBalance"`
 	LastTxnTimestamp int64   `db:"last_txn_timestamp" json:"lastTxnTimestamp"`
+	CreatedAt        int64   `db:"created_at" json:"createdAt"`
 }
 
 func (Contacts) TableName() string {
@@ -24,6 +25,7 @@ type Profile struct {
 	Timezone     string `db:"timezone" json:"timezone"`
 	MobileNumber string `db:"mobile_number" json:"mobileNumber"`
 	IsAdmin      bool   `db:"is_admin" json:"isAdmin"`
+	CreatedAt    int64  `db:"created_at" json:"createdAt"`
 }
 
 func (Profile) TableName() string {

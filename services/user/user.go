@@ -1,6 +1,8 @@
 package user
 
 import (
+	"time"
+
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/repos"
 )
@@ -44,6 +46,7 @@ func (us *userService) ListUsers() ([]models.Profile, error) {
 }
 
 func (us *userService) SignUp(user *models.Profile) error {
+	user.CreatedAt = time.Now().Unix()
 	return us.userRepo.AddNewUser(user)
 }
 
