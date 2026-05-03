@@ -131,19 +131,8 @@ func generateReport(ctx telebot.Context, rop ReportCallbackOptions) (gqtypes.Rep
 	for _, txn := range txns {
 		txnApis = append(txnApis, convert.ToTransactionAPIFormat(txn))
 	}
-	sort.Slice(txnApis, func(i, j int) bool { return txnApis[i].Date.Before(txnApis[j].Date) })
-	var running float64
-	for i := range txnApis {
-		switch txnApis[i].Type {
-		case string(models.IncomeTransaction):
-			running += txnApis[i].Amount
-		case string(models.ExpenseTransaction):
-			running -= txnApis[i].Amount
-		}
-		txnApis[i].RunningBalance = running
-	}
 	report.Transactions = txnApis
-	report.GeneratedAt = now
+	FinalizeReportTxns(&report, now)
 
 	summary, err := BuildSummary(svc, txns)
 	if err != nil {
@@ -257,6 +246,27 @@ func BuildTypeSeparatedSummary(
 	})
 
 	return result, nil
+}
+
+// FinalizeReportTxns sorts transactions by date asc, fills RunningBalance, and stamps GeneratedAt.
+func FinalizeReportTxns(report *gqtypes.Report, now time.Time) {
+	sort.Slice(report.Transactions, func(i, j int) bool {
+		return report.Transactions[i].Date.Before(report.Transactions[j].Date)
+	})
+	var running float64
+	for i := range report.Transactions {
+		switch report.Transactions[i].Type {
+		case string(models.IncomeTransaction):
+			running += report.Transactions[i].Amount
+		case string(models.ExpenseTransaction):
+			running -= report.Transactions[i].Amount
+		}
+		report.Transactions[i].RunningBalance = running
+	}
+	if now.IsZero() {
+		now = time.Now()
+	}
+	report.GeneratedAt = now
 }
 
 func ComputeTotals(txns []models.Transaction) (totalAmount, netBalance float64) {

@@ -116,6 +116,7 @@ func HandleGetReport(w http.ResponseWriter, r *http.Request) {
 	}
 
 	report.TotalAmount, report.NetBalance = handlers.ComputeTotals(txns)
+	handlers.FinalizeReportTxns(&report, now)
 
 	pdfFile, err := handlers.GenerateTransactionStatementFromTemplate(report, "")
 	if err != nil {
@@ -211,6 +212,7 @@ func HandleGetReportData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	report.TotalAmount, report.NetBalance = handlers.ComputeTotals(txns)
+	handlers.FinalizeReportTxns(&report, now)
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(report)
