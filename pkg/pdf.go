@@ -76,6 +76,9 @@ func convertViaChromeDP(outputFile string, htmlContent, header, footer []byte) e
 		chromedp.Flag("disable-gpu", true),
 		chromedp.Flag("no-sandbox", true),
 		chromedp.Flag("font-render-hinting", "none"),
+		chromedp.Flag("disable-crash-reporter", true),
+		chromedp.Flag("disable-breakpad", true),
+		chromedp.Flag("disable-dev-shm-usage", true),
 	)
 
 	allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
