@@ -79,6 +79,8 @@ func convertViaChromeDP(outputFile string, htmlContent, header, footer []byte) e
 		chromedp.Flag("disable-crash-reporter", true),
 		chromedp.Flag("disable-breakpad", true),
 		chromedp.Flag("disable-dev-shm-usage", true),
+		chromedp.Flag("crash-dumps-dir", "/tmp"),
+		chromedp.Flag("disable-features", "Crashpad"),
 	)
 
 	allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)

@@ -127,6 +127,7 @@ FROM chromium-base AS chromedp
 LABEL org.opencontainers.image.source="https://github.com/masudur-rahman/expense-tracker-bot"
 
 ENV CHROME_PATH=/usr/bin/chromium
+ENV HOME=/tmp
 RUN mkdir -p /app/configs /app/.sqlite && \
     chown -R 65535:65535 /app
 
