@@ -116,6 +116,7 @@ func HandleExample(ctx telebot.Context) error {
 - fmt: `fmt.Fprintln` already adds a newline; do not include `\n` in the string.
 - Parser: Avoid using day-name substrings (e.g., "fri") in test inputs to prevent false matches.
 - Hooks: Always call React Hooks (e.g., useMemo) at the top level, before any early returns (e.g., if (isLoading) return ...), to maintain consistent hook order across renders.
+- govulncheck: Standard library vulnerabilities can be resolved by updating the `go` directive in `go.mod` to a patched version (e.g., 1.26.3). Dependencies in `vendor/` must be synced with `go mod vendor` after updates.
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
